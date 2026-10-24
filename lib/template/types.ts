@@ -405,13 +405,13 @@ export interface PageTemplate {
  * cover-fitted and centred, which is what a photograph lands as.
  *
  * Keepnook expresses the same idea against the *cover-fitted frame* instead
- * (`PhotoCrop`). Source coordinates are the better half of that trade here
- * because they are independent of the slot: a template whose heart is made
- * slightly larger must not silently re-crop a thousand customers' photographs,
- * and a pan/zoom gesture produces exactly this rectangle with no frame to
- * divide by. The cost is that this is not Keepnook's field and would have to be
- * converted at the border if these documents are ever read there; the
- * conversion is six lines, and `docs/template-format.md` carries it.
+ * (`PhotoCrop`), and because that frame is the whole photograph uniformly
+ * scaled, the two are **the same four numbers** — a fill crossing between the
+ * formats needs no arithmetic. What differs is the anchor: Keepnook recomputes
+ * its frame from the element's current size, so a stored crop's meaning depends
+ * on a box a designer can move. Source coordinates do not, which is what a
+ * *published* template needs — enlarging a heart must not silently re-crop a
+ * thousand customers' photographs. `docs/template-format.md` has the rest.
  */
 export interface Crop {
   x: number;
