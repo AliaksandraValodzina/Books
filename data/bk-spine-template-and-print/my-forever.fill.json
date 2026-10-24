@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "templateId": "my-forever",
+  "templateRev": "6cada7f0",
+  "photos": {
+    "photoTop": {
+      "asset": {
+        "sha256": "d02c142d82c98cd985909f494906d1944ab127a062f093f6787a61d56d8c35b4",
+        "mime": "image/png",
+        "px": [
+          1600,
+          1100
+        ],
+        "label": "fixture — warm landscape"
+      },
+      "crop": {
+        "x": 0.22,
+        "y": 0.08,
+        "width": 0.56,
+        "height": 0.74
+      }
+    },
+    "photoBottom": {
+      "asset": {
+        "sha256": "14b9fc70e10edb204c072b830bf6fcc8afbb4574188674e6a170252ca7915ff8",
+        "mime": "image/png",
+        "px": [
+          1100,
+          1500
+        ],
+        "label": "fixture — cool portrait"
+      },
+      "crop": {
+        "x": 0.06,
+        "y": 0.3,
+        "width": 0.72,
+        "height": 0.62
+      }
+    }
+  },
+  "texts": {
+    "wordTop": "my",
+    "wordBottom": "forever"
+  }
+}

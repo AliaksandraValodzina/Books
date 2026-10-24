@@ -1,0 +1,194 @@
+{
+  "schema": 1,
+  "id": "my-forever",
+  "rev": "6cada7f0",
+  "name": "My Forever",
+  "canvas": {
+    "unit": "pt",
+    "width": 756,
+    "height": 756,
+    "bleed": 18,
+    "safe": 18,
+    "background": "#6B4A33"
+  },
+  "print": {
+    "pixels": {
+      "width": 3150,
+      "height": 3150
+    },
+    "colourSpace": "srgb",
+    "encoding": "png"
+  },
+  "layers": [
+    {
+      "id": "cloth",
+      "kind": "art",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 756,
+        "height": 756
+      },
+      "art": {
+        "kind": "polkaCloth",
+        "background": "#6B4A33",
+        "dot": "#F2E4D3",
+        "radius": 7,
+        "pitch": 34,
+        "weave": {
+          "colour": "#24150C",
+          "width": 0.9,
+          "pitch": 2.4,
+          "opacity": 0.08
+        }
+      }
+    },
+    {
+      "id": "card",
+      "kind": "shape",
+      "frame": {
+        "x": 96,
+        "y": 118,
+        "width": 564,
+        "height": 560
+      },
+      "rotation": -1.2,
+      "shape": {
+        "kind": "rect",
+        "radius": 4,
+        "fill": "#FBF6EC",
+        "stroke": {
+          "colour": "#E4D9C6",
+          "width": 1
+        },
+        "shadow": {
+          "colour": "#1E1008",
+          "blur": 9,
+          "dx": 0,
+          "dy": 7
+        }
+      }
+    },
+    {
+      "id": "tape",
+      "kind": "art",
+      "frame": {
+        "x": 300,
+        "y": 92,
+        "width": 158,
+        "height": 54
+      },
+      "rotation": -4.5,
+      "art": {
+        "kind": "tape",
+        "colour": "#DCD0AE",
+        "opacity": 0.66,
+        "tear": 4.5,
+        "seed": 7391
+      }
+    },
+    {
+      "id": "heart-upper",
+      "kind": "photoSlot",
+      "slot": "photoTop",
+      "frame": {
+        "x": 140,
+        "y": 152,
+        "width": 236,
+        "height": 208
+      },
+      "rotation": -3.5,
+      "mask": {
+        "kind": "heart",
+        "cleft": 0.26
+      },
+      "stroke": {
+        "colour": "#FFFFFF",
+        "width": 3
+      },
+      "placeholder": {
+        "fill": "#F0E7D8"
+      },
+      "prompt": "The two of you"
+    },
+    {
+      "id": "word-my",
+      "kind": "textSlot",
+      "slot": "wordTop",
+      "frame": {
+        "x": 404,
+        "y": 222,
+        "width": 176,
+        "height": 116
+      },
+      "rotation": -5,
+      "font": "hand",
+      "size": 92,
+      "baseline": 86,
+      "colour": "#4A2E22",
+      "align": "start",
+      "maxChars": 8
+    },
+    {
+      "id": "heart-lower",
+      "kind": "photoSlot",
+      "slot": "photoBottom",
+      "frame": {
+        "x": 222,
+        "y": 374,
+        "width": 248,
+        "height": 220
+      },
+      "rotation": 3,
+      "mask": {
+        "kind": "heart",
+        "cleft": 0.26
+      },
+      "stroke": {
+        "colour": "#FFFFFF",
+        "width": 3
+      },
+      "placeholder": {
+        "fill": "#F0E7D8"
+      },
+      "prompt": "Somewhere you went"
+    },
+    {
+      "id": "word-forever",
+      "kind": "textSlot",
+      "slot": "wordBottom",
+      "frame": {
+        "x": 150,
+        "y": 604,
+        "width": 392,
+        "height": 62
+      },
+      "rotation": 0.8,
+      "font": "typewriter",
+      "size": 50,
+      "baseline": 44,
+      "colour": "#3A241A",
+      "align": "middle",
+      "letterSpacing": 6,
+      "transform": "uppercase",
+      "maxChars": 12
+    },
+    {
+      "id": "kiss",
+      "kind": "art",
+      "frame": {
+        "x": 522,
+        "y": 568,
+        "width": 116,
+        "height": 94
+      },
+      "rotation": -14,
+      "art": {
+        "kind": "kiss",
+        "colour": "#B22741",
+        "creases": 9,
+        "seed": 4211
+      }
+    }
+  ]
+}
