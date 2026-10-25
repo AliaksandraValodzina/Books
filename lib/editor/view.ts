@@ -112,6 +112,41 @@ export function baseCrop(slot: Box, natural: Natural): { width: number; height: 
 }
 
 /**
+ * A view whose centre is inside the range that actually does something.
+ *
+ * **This is not the same clamp as `sane`, and the difference is a bug a
+ * customer would feel.** `sane` keeps the centre inside the photograph, 0–1.
+ * This keeps it inside the narrower range where the window is still full of
+ * photograph — which depends on the zoom, and therefore on the slot.
+ *
+ * Without it a view *stores* travel that has no effect. Drag a long way past
+ * the edge and `cx` keeps counting down while `cropFor` clamps it back for
+ * drawing, so nothing moves; then drag the other way and nothing moves again
+ * until the dead distance has been paid back. On a phone that is the gesture
+ * sticking for no visible reason, which reads as a broken site rather than as
+ * an edge.
+ *
+ * So every function that *writes* a view ends here, and `cropFor` can then
+ * clamp defensively for the views it did not write — a stored draft, a
+ * hand-edited file — without that clamp ever being load-bearing.
+ */
+export function clampCentre(
+  view: Partial<PhotoView> | undefined,
+  slot: Box,
+  natural: Natural,
+): PhotoView {
+  const v = sane(view);
+  const base = baseCrop(slot, natural);
+  const width = base.width / v.zoom;
+  const height = base.height / v.zoom;
+  return {
+    zoom: v.zoom,
+    cx: clamp(v.cx, width / 2, 1 - width / 2),
+    cy: clamp(v.cy, height / 2, 1 - height / 2),
+  };
+}
+
+/**
  * The `Crop` a view means.
  *
  * The centre is clamped so the window is always full of photograph: a crop that
@@ -120,13 +155,11 @@ export function baseCrop(slot: Box, natural: Natural): { width: number; height: 
  * source, the clamp's range is never empty.
  */
 export function cropFor(view: Partial<PhotoView> | undefined, slot: Box, natural: Natural): Crop {
-  const v = sane(view);
+  const v = clampCentre(view, slot, natural);
   const base = baseCrop(slot, natural);
   const width = base.width / v.zoom;
   const height = base.height / v.zoom;
-  const cx = clamp(v.cx, width / 2, 1 - width / 2);
-  const cy = clamp(v.cy, height / 2, 1 - height / 2);
-  return { x: cx - width / 2, y: cy - height / 2, width, height };
+  return { x: v.cx - width / 2, y: v.cy - height / 2, width, height };
 }
 
 /**
@@ -145,11 +178,15 @@ export function viewFor(crop: Crop | undefined, slot: Box, natural: Natural): Ph
   // The larger of the two ratios, for the same reason `placePhoto` takes the
   // larger: it is the one that keeps the window covered.
   const zoom = Math.max(w > 0 ? base.width / w : 1, h > 0 ? base.height / h : 1);
-  return sane({
-    zoom,
-    cx: finite(crop.x, 0) + w / 2,
-    cy: finite(crop.y, 0) + h / 2,
-  });
+  return clampCentre(
+    {
+      zoom,
+      cx: finite(crop.x, 0) + w / 2,
+      cy: finite(crop.y, 0) + h / 2,
+    },
+    slot,
+    natural,
+  );
 }
 
 /**
@@ -168,16 +205,22 @@ export function panned(
   slot: Box,
   natural: Natural,
 ): PhotoView {
-  const v = sane(view);
+  const v = clampCentre(view, slot, natural);
   const crop = cropFor(v, slot, natural);
   const sw = finite(slot.width, 0);
   const sh = finite(slot.height, 0);
   if (!(sw > 0 && sh > 0)) return v;
-  return sane({
-    zoom: v.zoom,
-    cx: v.cx - (finite(dx, 0) / sw) * crop.width,
-    cy: v.cy - (finite(dy, 0) / sh) * crop.height,
-  });
+  // Clamped on the way out, not merely on the way to a crop: see `clampCentre`
+  // for why storing travel that does nothing makes the next drag stick.
+  return clampCentre(
+    {
+      zoom: v.zoom,
+      cx: v.cx - (finite(dx, 0) / sw) * crop.width,
+      cy: v.cy - (finite(dy, 0) / sh) * crop.height,
+    },
+    slot,
+    natural,
+  );
 }
 
 /**
@@ -207,11 +250,15 @@ export function zoomedAbout(
   const fy = clamp(finite(focus.y, 0.5), 0, 1);
   const anchorX = before.x + fx * before.width;
   const anchorY = before.y + fy * before.height;
-  return sane({
-    zoom: next,
-    cx: anchorX + (0.5 - fx) * after.width,
-    cy: anchorY + (0.5 - fy) * after.height,
-  });
+  return clampCentre(
+    {
+      zoom: next,
+      cx: anchorX + (0.5 - fx) * after.width,
+      cy: anchorY + (0.5 - fy) * after.height,
+    },
+    slot,
+    natural,
+  );
 }
 
 /**

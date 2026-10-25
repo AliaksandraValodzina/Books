@@ -175,6 +175,52 @@ describe("panning", () => {
     expect(crop.y).toBeCloseTo(0, 9);
   });
 
+  it("leaves no dead travel after a drag past the edge", () => {
+    // Found in a browser, not here, which is why it is here now. `cropFor`
+    // clamps the centre when it derives a crop, so a view may sit well outside
+    // the range that does anything and still *draw* correctly. If the view is
+    // stored unclamped, every one of those wasted points has to be dragged back
+    // before the picture moves again — the gesture sticking for no visible
+    // reason, which on a phone reads as a broken site rather than as an edge.
+    let view = start;
+    for (let i = 0; i < 20; i++) view = panned(view, 400, 0, slot, natural);
+
+    const atEdge = cropFor(view, slot, natural);
+    expect(atEdge.x).toBeCloseTo(0, 9);
+
+    // One small drag the other way must move the picture straight away.
+    const back = cropFor(panned(view, -8, 0, slot, natural), slot, natural);
+    expect(back.x).toBeGreaterThan(atEdge.x + 1e-6);
+  });
+
+  it("keeps a written view inside the range that does something", () => {
+    // The property behind the test above, over every way a view gets written.
+    const inRange = (v: { zoom: number; cx: number; cy: number }) => {
+      const crop = cropFor(v, slot, natural);
+      expect(v.cx).toBeGreaterThanOrEqual(crop.width / 2 - 1e-9);
+      expect(v.cx).toBeLessThanOrEqual(1 - crop.width / 2 + 1e-9);
+      expect(v.cy).toBeGreaterThanOrEqual(crop.height / 2 - 1e-9);
+      expect(v.cy).toBeLessThanOrEqual(1 - crop.height / 2 + 1e-9);
+    };
+    for (const [dx, dy] of [
+      [900, 900],
+      [-900, -900],
+      [900, -900],
+      [3, 0],
+    ]) {
+      inRange(panned(start, dx, dy, slot, natural));
+    }
+    for (const focus of [
+      { x: 0, y: 0 },
+      { x: 1, y: 1 },
+      { x: 0.5, y: 0.5 },
+    ]) {
+      inRange(zoomedAbout(start, 2.4, focus, slot, natural));
+      inRange(zoomedAbout(start, 0.2, focus, slot, natural));
+    }
+    inRange(viewFor({ x: 0.9, y: 0.9, width: 0.3, height: 0.3 }, slot, natural));
+  });
+
   it("is reversible, so a customer can undo a drag with their finger", () => {
     const there = panned(start, 17, -23, slot, natural);
     const back = panned(there, -17, 23, slot, natural);
