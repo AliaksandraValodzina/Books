@@ -1,0 +1,80 @@
+# Checks on pull requests. Required, not optional.
+#
+# The repository had tests and nothing ran them. That is the exact hole that
+# let 92 dead assertions accumulate in Keepnook over eighteen days, and with
+# three commits on the clock this is the cheapest this gate will ever be.
+#
+# **It runs the whole suite.** `npm test` is `vitest run`, which collects every
+# file matching the pattern in `vitest.config.mts` — there is no list of files
+# here and there must never be one. The Keepnook gate narrowed itself to four
+# of 154 spec files by exactly that mistake: a hand-written list looks precise,
+# passes, and silently stops covering everything added after it was written.
+# `test/config.test.ts` asserts that no such list has crept in, and that every
+# test file on disk is one the pattern collects.
+#
+# `npm ci` rather than `npm install`, because `install` rewrites the lockfile
+# and a gate that can change its own inputs is not measuring the commit.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # So a red main can be re-checked without pushing an empty commit.
+  workflow_dispatch:
+
+# A new push to a branch makes the previous run's answer irrelevant.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          # The version this is developed against. `npm` cache keyed on the
+          # lockfile, which `npm ci` is about to install from exactly.
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      # Each step runs even if an earlier one failed, so one pull request gets
+      # one complete list of what is wrong rather than one item per push.
+      - name: Typecheck
+        if: ${{ !cancelled() }}
+        run: npm run lint
+
+      - name: Test
+        if: ${{ !cancelled() }}
+        run: npm test
+
+      # The app has to still deploy. A suite that passes against a tree that
+      # will not build is a gate that lets the only user-visible failure
+      # through, so the build is part of the gate and not a later surprise.
+      - name: Build
+        if: ${{ !cancelled() }}
+        run: npm run build
+
+      # The committed print file is evidence, and evidence that has drifted
+      # from the renderer is worse than none: `data/` is what a reviewer reads
+      # to see what the page looks like. `npm run print` also refuses outright
+      # when a template has been edited without restamping its `rev`.
+      - name: The committed print file is still what the renderer produces
+        if: ${{ !cancelled() }}
+        run: |
+          npm run print
+          if ! git diff --quiet -- data/; then
+            echo "::error::data/ is stale. Run 'npm run print' and commit the result."
+            git --no-pager diff --stat -- data/
+            exit 1
+          fi
