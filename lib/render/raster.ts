@@ -20,6 +20,28 @@ import { renderPageSvg } from "./svg";
 import { readPngSize, withSrgbChunk } from "./png";
 
 /**
+ * Bytes the caller already holds, keyed by content hash.
+ *
+ * **The third asset store, and the reason it is an argument here.** There is no
+ * bucket yet, so the editor keeps a customer's resized photographs in the tab
+ * and posts them with the render request — they are in neither
+ * `fixtures/assets/` nor R2, and a store is exactly what they need to be.
+ *
+ * They are consulted *before* the two durable stores because they are the more
+ * specific answer: the fill was composed against these bytes. They must be
+ * **verified before they get here** — `lib/assets/supplied.ts` is the only
+ * intended producer and checks digest, type and pixel size — which is why the
+ * type is bytes rather than a `data:` URI. A string that was already an `href`
+ * would make this the one place in the codebase where an address went
+ * unchecked.
+ *
+ * This is not a branch in the renderer. `lib/render/svg.ts` still sees nothing
+ * but an `href` function, which `renderPageSvg`'s own docblock calls "an
+ * *address*, not a drawing" — the seam that keeps "one renderer" true.
+ */
+export type SuppliedBytes = Map<string, Uint8Array>;
+
+/**
  * Every photograph the fill uses, as a `data:` URI.
  *
  * Resolved **before** the render rather than during it, because the renderer is
@@ -34,6 +56,7 @@ import { readPngSize, withSrgbChunk } from "./png";
 async function inlineAssets(
   template: PageTemplate,
   fill: PageFill,
+  supplied?: SuppliedBytes,
 ): Promise<Map<string, string>> {
   const refs = [
     ...Object.values(fill.photos ?? {}).map((p) => p.asset),
@@ -42,7 +65,8 @@ async function inlineAssets(
   const out = new Map<string, string>();
   for (const ref of refs) {
     if (!ref || out.has(ref.sha256)) continue;
-    out.set(ref.sha256, dataUri(await loadAsset(ref), ref.mime));
+    const given = supplied?.get(ref.sha256);
+    out.set(ref.sha256, dataUri(given ?? (await loadAsset(ref)), ref.mime));
   }
   return out;
 }
@@ -51,8 +75,9 @@ async function inlineAssets(
 export async function renderPrintSvg(
   template: PageTemplate,
   fill: PageFill,
+  supplied?: SuppliedBytes,
 ): Promise<string> {
-  const inlined = await inlineAssets(template, fill);
+  const inlined = await inlineAssets(template, fill, supplied);
   return renderPageSvg(template, fill, {
     href: (ref) => {
       const uri = inlined.get(ref.sha256);
@@ -86,8 +111,9 @@ export class PrintSizeMismatch extends Error {}
 export async function renderPrintPng(
   template: PageTemplate,
   fill: PageFill,
+  supplied?: SuppliedBytes,
 ): Promise<PrintResult> {
-  const svg = await renderPrintSvg(template, fill);
+  const svg = await renderPrintSvg(template, fill, supplied);
   const want = template.print.pixels;
 
   const resvg = new Resvg(svg, {
