@@ -17,6 +17,7 @@ import { describe, expect, it } from "vitest";
 import { accept, clampToUnits, explain } from "../lib/editor/text";
 import { FACES } from "../lib/render/fonts";
 import { validateFill } from "../lib/template/validate";
+import { renderPageSvg } from "../lib/render/svg";
 import { MY_FOREVER } from "../templates/my-forever";
 import { FIXTURE_FILL } from "../fixtures/order";
 import type { PageFill, TextSlotLayer } from "../lib/template/types";
@@ -234,6 +235,51 @@ describe("whitespace and the invisible", () => {
 
   it("removes a zero width space from inside a word", () => {
     expect(accept(TOP, "m​y").text).toBe("my");
+  });
+});
+
+describe("a word that is trying to be markup", () => {
+  it("is escaped by the renderer, not by the editor", () => {
+    // The page inlines the SVG with `dangerouslySetInnerHTML`, and the words
+    // in it are typed by a stranger. "<script>" is eight characters, which is
+    // exactly what `wordTop` accepts, so this is reachable rather than
+    // theoretical.
+    //
+    // The escaping belongs in `drawTextSlot`, not here: a word stripped of its
+    // punctuation by the editor would be a different word on the page, and an
+    // editor that sanitised would be a second place the rule lived — one that
+    // the print path, which never goes through the editor, would not share.
+    for (const raw of ["<script>", '"><img s', "a<b>c", "</text>", "&amp;"]) {
+      const text = accept(TOP, raw).text;
+      // The editor keeps the characters: they are all in the face.
+      expect(accept(TOP, raw).unsettable).toEqual([]);
+
+      const svg = renderPageSvg(
+        MY_FOREVER,
+        fillWith({ wordTop: text }),
+        { href: () => "x" },
+      );
+      const element = /<text[^>]*>.*?<\/text>/.exec(svg)?.[0] ?? "";
+      expect(element, raw).not.toBe("");
+
+      // The customer's word is the content of a tspan. Nothing in there may be
+      // a raw angle bracket, or it would open a tag in a document the page
+      // inlines with `dangerouslySetInnerHTML`.
+      const spans = [...element.matchAll(/<tspan[^>]*>(.*?)<\/tspan>/g)].map((m) => m[1]);
+      expect(spans.length, raw).toBe(1);
+      expect(spans[0], raw).not.toMatch(/[<>]/);
+      expect(spans[0], raw).not.toBe("");
+    }
+  });
+
+  it("still reaches the page as the characters the customer typed", () => {
+    // The paired check: escaping must not be silently dropping them.
+    const svg = renderPageSvg(
+      MY_FOREVER,
+      fillWith({ wordTop: accept(TOP, "a<b>c").text }),
+      { href: () => "x" },
+    );
+    expect(svg).toContain("a&lt;b&gt;c");
   });
 });
 
