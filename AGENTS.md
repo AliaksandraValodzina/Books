@@ -59,6 +59,26 @@ replacement string when they disagree. Everything a customer types goes through
 `lib/editor/text.ts`, whose one contract is that no input produces a fill
 `validateFill` would refuse.
 
+## Two sets of faces, and the line between them
+
+**Artwork faces** reach the print file, so they come only from the `FACES`
+table in `lib/render/fonts.ts` and the browser's `@font-face` block is
+*generated* from it. **Chrome faces** set the page around the artwork and are
+declared by hand in `app/globals.css`; that is safe only because
+`lib/render/svg.ts` resolves a `FACES` key and nothing else, so no template can
+name one. `test/chrome-type.test.ts` asserts the line in both directions, and
+`public/fonts/README.md` is the inventory.
+
+Colour is the same shape: the nine tokens in `app/globals.css` carry the
+palette, light and dark, and nothing should go back to `opacity-NN` washes.
+Two things that are *not* tokens — overlays drawn on top of the artwork (the
+heart pills, the "tap to write" chip) keep literal hexes, because the artwork
+is the same cream and brown in both schemes; and `--accent` is the kiss in
+`templates/my-forever.ts`, asserted equal, so it is not a theme value.
+
+The page's design is `data/bk-landing-design-research/report.md` §9 — eight
+sites measured at phone width. Read it before re-deciding any of this.
+
 ## Facts the repository does not have
 
 `lib/product.ts` is a union whose only `value` field is on the

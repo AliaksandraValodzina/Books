@@ -210,11 +210,30 @@ export default function Editor({ guides = false }: { guides?: boolean }) {
   }, [draft, template, setNotice]);
 
   return (
-    <div className="mx-auto w-full max-w-[34rem]">
+    /*
+      A card on the page, rather than the page itself.
+
+      §9 of `data/bk-landing-design-research/report.md` puts the editor on
+      `--surface` inside a hairline so it reads as *a tool lying on the page*.
+      It used to be a full-bleed square of artwork with four grey forms under
+      it, which §11 found was the whole problem: the one thing none of the eight
+      reference sites can offer — a live editor before payment and before an
+      account — looked like a form, so nobody could tell it was the product.
+
+      The overlays inside the square are a separate matter and are **not**
+      tokenised: they sit on the artwork, and the artwork is the same cream and
+      brown in both colour schemes. A pill that followed dark mode would turn
+      white-on-cream over a light photograph.
+    */
+    <div className="mx-auto w-full max-w-[34rem] rounded-2xl border border-rule bg-surface p-3 sm:p-4">
       <div
         ref={stageRef}
         data-testid="editor-stage"
-        className="relative aspect-square w-full select-none overflow-hidden rounded-xl shadow-2xl shadow-black/30 [&>div>svg]:block [&>div>svg]:h-auto [&>div>svg]:w-full"
+        className="relative aspect-square w-full select-none overflow-hidden rounded-lg [&>div>svg]:block [&>div>svg]:h-auto [&>div>svg]:w-full"
+        style={{
+          boxShadow:
+            "0 0.75rem 1.75rem -0.5rem rgba(43, 29, 20, 0.22), 0 0.1rem 0.3rem rgba(43, 29, 20, 0.1)",
+        }}
       >
         <div dangerouslySetInnerHTML={{ __html: svg }} />
 
@@ -245,14 +264,17 @@ export default function Editor({ guides = false }: { guides?: boolean }) {
         ))}
       </div>
 
-      <p className="mt-3 text-center text-sm opacity-70" role="status">
+      <p className="mt-4 text-center text-[0.9375rem] text-ink-soft" role="status">
         {anyPhoto
           ? "Drag inside a heart to move your photo. Pinch, or use the zoom below."
           : "Tap a heart to put one of your own photos in it. Nothing is uploaded."}
       </p>
 
       {notice ? (
-        <p className="mt-3 rounded-lg border border-current/25 bg-black/5 px-3 py-2 text-sm" role="alert">
+        <p
+          className="mt-3 rounded-lg border border-rule bg-band px-3 py-2 text-[0.9375rem]"
+          role="alert"
+        >
           {notice}
         </p>
       ) : null}
@@ -285,26 +307,43 @@ export default function Editor({ guides = false }: { guides?: boolean }) {
       </div>
 
       {persistence && !persistence.saved && persistence.reason === "quota" ? (
-        <p className="mt-3 text-xs opacity-70" role="status">
+        <p className="mt-3 text-[0.8125rem] text-ink-soft" role="status">
           {persistence.wordsKept
             ? "Your photos are too large for this browser to remember. Your words are saved — the photos are still here, but a refresh would lose them."
             : "This browser will not remember your page. It is all still here, but a refresh would lose it."}
         </p>
       ) : null}
 
-      <div className="mt-6">
+      {/*
+        A text link, not a slab.
+
+        §9 demotes this deliberately. It was a full-width bordered button that
+        is disabled until a photograph is chosen, so on first paint the page
+        offered two large dead rectangles — this and the order button — and a
+        dead control reads as a broken site rather than as a locked one. As a
+        line of text with an arrow it is still the strongest proof on the page
+        (the real renderer, at 3150px, from the customer's own photographs) and
+        it no longer competes with the one button that matters.
+      */}
+      <div className="mt-6 border-t border-rule pt-4">
         <button
           type="button"
           onClick={() => void download()}
           disabled={!anyPhoto || downloading}
-          className="w-full rounded-lg border border-current/25 px-4 py-3 font-medium disabled:opacity-40"
+          className="text-left text-[0.9375rem] font-medium text-accent-ink underline decoration-accent-ink/40 underline-offset-4 disabled:cursor-not-allowed disabled:text-ink-soft disabled:no-underline"
         >
-          {downloading ? "Making the print file…" : `See the real ${template.print.pixels.width} px print file`}
+          {downloading
+            ? "Making the print file…"
+            : `See the real ${template.print.pixels.width} px print file →`}
         </button>
-        <p className="mt-2 text-xs opacity-60">
-          The same renderer draws the page above and that file, at{" "}
-          {Math.round((template.print.pixels.width / template.canvas.width) * 72)} DPI. It is the
-          picture that would be printed — not a preview of one.
+        <p className="mt-2 text-[0.8125rem] text-ink-soft">
+          {anyPhoto
+            ? `The same renderer draws the page above and that file, at ${Math.round(
+                (template.print.pixels.width / template.canvas.width) * 72,
+              )} DPI. It is the picture that would be printed — not a preview of one.`
+            : `Put a photograph in a heart and you can download the real ${Math.round(
+                (template.print.pixels.width / template.canvas.width) * 72,
+              )} DPI file, before paying anything.`}
         </p>
       </div>
     </div>
@@ -542,11 +581,18 @@ function PhotoControls({
 
   return (
     <div
-      className={`rounded-xl border p-3 transition-colors ${
-        active ? "border-current/50 bg-black/5" : "border-current/15"
+      // An inset on the editor's `--surface`, so the controls read as part of
+      // the tool rather than as four more cards on the page. The active one
+      // takes the accent's hairline, which is the only place the accent is used
+      // on something that is neither the price nor the CTA — and it is still
+      // marking the desirable thing: the photograph being worked on.
+      className={`rounded-xl border bg-ground p-3 transition-colors ${
+        active ? "border-accent-ink/45" : "border-rule"
       }`}
     >
-      <p className="text-sm font-medium">{layer.prompt ?? "A photograph"}</p>
+      <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.06em] text-ink-soft">
+        {layer.prompt ?? "A photograph"}
+      </p>
 
       <input
         ref={fileRef}
@@ -567,7 +613,10 @@ function PhotoControls({
           fileRef.current?.click();
         }}
         disabled={busy}
-        className="mt-2 w-full rounded-lg bg-[#2b1d14] px-3 py-2.5 text-sm font-medium text-[#efe9df] disabled:opacity-50"
+        // `bg-ink`/`text-ground` rather than the literal hexes it used to
+        // carry, so this inverts correctly in dark mode. The pills *inside* the
+        // artwork keep their literal values, for the reason on the outer card.
+        className="mt-2.5 w-full rounded-lg bg-ink px-3 py-2.5 text-[0.9375rem] font-medium text-ground disabled:opacity-50"
       >
         {busy ? "Reading…" : entry ? "Choose a different photo" : "Choose a photo"}
       </button>
@@ -575,7 +624,7 @@ function PhotoControls({
       {entry ? (
         <div className="mt-3">
           <label className="flex items-center gap-2 text-xs">
-            <span className="opacity-70">Zoom</span>
+            <span className="font-semibold uppercase tracking-[0.06em] text-ink-soft">Zoom</span>
             <input
               type="range"
               min={1}
@@ -590,11 +639,11 @@ function PhotoControls({
                 // centre of the window. `sane` does the clamping either way.
                 onView((view) => ({ ...view, zoom: Math.min(Math.max(zoom, 1), MAX_ZOOM) }));
               }}
-              className="w-full"
+              className="w-full accent-[#B22741]"
             />
           </label>
           {dpi !== null ? (
-            <p className="mt-1.5 text-[0.7rem] opacity-70">
+            <p className="mt-1.5 text-[0.75rem] text-ink-soft">
               {dpi >= DPI_TARGET
                 ? `Sharp enough to print — ${dpi} DPI.`
                 : `${dpi} DPI at this zoom; ${DPI_TARGET} is ideal. Zoom out a little, or use a larger photo, for the sharpest print.`}
@@ -631,12 +680,15 @@ function WordField({
 }) {
   const face = FACES[layer.font]?.family ?? layer.font;
   return (
-    <div className="rounded-xl border border-current/15 p-3">
+    <div className="rounded-xl border border-rule bg-ground p-3">
       <div className="flex items-baseline justify-between gap-2">
-        <label className="text-sm font-medium" htmlFor={`word-${layer.slot}`}>
+        <label
+          className="text-[0.8125rem] font-semibold uppercase tracking-[0.06em] text-ink-soft"
+          htmlFor={`word-${layer.slot}`}
+        >
           Your word
         </label>
-        <span className="text-[0.7rem] tabular-nums opacity-60">
+        <span className="text-[0.75rem] tabular-nums text-ink-soft">
           {value.length}/{layer.maxChars}
         </span>
       </div>
@@ -649,9 +701,9 @@ function WordField({
         autoComplete="off"
         spellCheck={false}
         style={{ fontSize: "16px" }}
-        className="mt-2 w-full rounded-lg border border-current/20 bg-transparent px-3 py-2"
+        className="mt-2.5 w-full rounded-lg border border-rule bg-surface px-3 py-2 text-ink"
       />
-      <p className="mt-1.5 text-[0.7rem] opacity-60">
+      <p className="mt-2 text-[0.75rem] text-ink-soft">
         Set in {face}. Latin letters, numbers and punctuation — that face has no others, and a
         letter it cannot write would print as a gap.
       </p>
