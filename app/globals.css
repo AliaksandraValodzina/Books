@@ -1,18 +1,243 @@
 @import "tailwindcss";
 
-:root {
-  --ground: #efe9df;
-  --ink: #2b1d14;
+/*
+  ===========================================================================
+  The chrome's two faces.
+  ===========================================================================
+
+  `lib/render/fonts.ts` warns that a second hand-written list of `@font-face`
+  rules is "exactly the drift this product cannot afford". That warning is
+  about the **artwork** faces — Indie Flower and Special Elite — because a word
+  the screen sets in a face the rasteriser lacks prints as a gap, and nobody
+  finds out until the book arrives. Those two still come from that one table,
+  generated into `<head>` by `fontFaceCss()`.
+
+  The two below are **chrome**, and no codepoint of them can reach a print
+  file: `lib/render/svg.ts` only ever names a `FACES` key, so a template cannot
+  ask for Fraunces and the rasteriser is never asked to find it. Declaring them
+  here is therefore not the drift that note forbids — it is the other side of
+  the line it draws. `test/chrome-type.test.ts` asserts the line holds.
+
+  Vendored under `public/fonts/chrome/`, not fetched, for the same reason the
+  artwork faces are: a webfont CDN makes the page depend on somebody else's
+  uptime, and it tells a third party who read it.
+
+  `font-display: swap` here, where `block` is right for the artwork. A heading
+  that appears in Georgia for 100ms and then in Fraunces costs nothing; an
+  artwork word that appears in a substituted face is a lie about the print.
+*/
+
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/chrome/fraunces-latin-opsz-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+@font-face {
+  font-family: "Fraunces";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/chrome/fraunces-latin-opsz-italic.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/chrome/instrument-sans-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/*
+  The alternative display face, and the only reason it is loaded.
+
+  `data/bk-landing-design-research/report.md` §12 records the display typeface
+  as a decision only the captain can make: Fraunces (recommended) or Instrument
+  Serif (sharper, same foundry as the sans). It is a picture question, so the
+  page answers it with a picture — `/?type=serif` sets the whole page in
+  Instrument Serif and the footer carries the link both ways. It costs 43 kB
+  and it is the difference between the captain choosing and the captain reading
+  about a choice.
+
+  Delete these two rules and the `[data-display]` block below once they have
+  chosen, along with the footer link.
+*/
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/chrome/instrument-serif-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/chrome/instrument-serif-latin-400-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/*
+  ===========================================================================
+  The palette.
+  ===========================================================================
+
+  Every value is from `data/bk-landing-design-research/report.md` §9, which
+  read them off the live reference pages with `getComputedStyle` rather than
+  guessing. One deviates and it is marked.
+
+  Two of them are **ours already and must stay**: `--ink` is drawn from the
+  artwork, and `--accent` is the literal colour of the lipstick kiss in
+  `templates/my-forever.ts` — `#B22741`, the same six hex digits. The page and
+  the thing it sells share one red, and `test/chrome-type.test.ts` asserts they
+  have not drifted apart.
+*/
+
+:root {
+  /* Page background. From Ugmonk. Brighter than the old `#efe9df`, and far
+     enough from the template's own `#FBF6EC` card that the artwork sits *on*
+     the page instead of bleeding into it — §8(e) is the failure this fixes. */
+  --ground: #f8f6ef;
+  /* The editor panel and the control cards. From Papier. */
+  --surface: #fffefa;
+  /* The one alternating band: "What you get". */
+  --band: #f1eadc;
+  --ink: #2b1d14;
+  /* Secondary copy. Replaces six different `opacity-50/55/60/70/75/80`
+     washes that were all doing this one job. 6.30:1 on `--ground`. */
+  --ink-soft: #6b5748;
+  --rule: #e2d8c8;
+
+  /* The kiss mark. On the desirable things only — the CTA, the price, the
+     eyebrow rule — never on a warning. §8(d) is the failure this fixes: the
+     only red on the old page was five alarm marks. */
+  --accent: #b22741;
+  /* The same red as *ink*. Split from the fill because dark mode cannot use
+     one value for both; see the dark block. 5.96:1 on `--ground`. */
+  --accent-ink: #b22741;
+
+  /* `TO CONFIRM`, which stops being red.
+
+     **Deviation from the report**, and the only one in this palette. §9 names
+     `#8A6A3A`; measured against `--band` — which is where the tag actually
+     sits, since the facts table *is* the band — that is 4.17:1 and fails AA
+     for 11px text. One step darker holds the hue and reaches 5.16:1. */
+  --caution: #7a5c2e;
+
+  /* The display face, swapped by `?type=serif`. See §12 and the note above. */
+  --display-face: "Fraunces", Georgia, "Times New Roman", serif;
+  --body-face: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+[data-display="instrument-serif"] {
+  --display-face: "Instrument Serif", Georgia, "Times New Roman", serif;
+}
+
+/*
+  Dark mode, treated deliberately.
+
+  The report's eight references are all light-only and give no guidance here,
+  so this is reasoned rather than measured-from-a-reference, and every pair
+  below was checked to AA.
+
+  Two things it deliberately does not do. It does not go to black: the artwork
+  is warm cream and brown, and a neutral black ground makes the card look
+  yellow. And it does not lift the CTA's fill — `--accent` stays the product's
+  own `#B22741` in both modes, because that is the colour of the kiss and it is
+  not a theme value. Only the red used as *ink* lifts, because `#B22741` text
+  on a near-black ground is 2.4:1 and unreadable.
+*/
 @media (prefers-color-scheme: dark) {
   :root {
     --ground: #17110c;
+    --surface: #201810;
+    --band: #241a11;
     --ink: #efe3d4;
+    --ink-soft: #b6a491;
+    --rule: #3a2d21;
+    --accent: #b22741;
+    --accent-ink: #e8808f;
+    --caution: #d1a868;
   }
+}
+
+/*
+  The tokens above, as Tailwind utilities.
+
+  `inline` so the generated utility reads `var(--ground)` rather than copying
+  today's value into the class — otherwise the dark block above would be
+  overridden by whatever `bg-ground` had baked in.
+*/
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-band: var(--band);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-rule: var(--rule);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-caution: var(--caution);
+
+  --font-display: var(--display-face);
+  --font-sans: var(--body-face);
 }
 
 body {
   background: var(--ground);
   color: var(--ink);
+  font-family: var(--body-face);
+  /* §9's body row: 16px / 400 / 1.55. */
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+/*
+  The accordions.
+
+  `<details>` rather than a React disclosure, because the long explanations are
+  server-rendered static copy and a `useState` toggle would turn three sections
+  into client components for nothing. The marker is a CSS triangle: the page
+  renders exactly two `<svg>` elements — the object and the editor's page — and
+  `test/funnel.test.tsx` counts them, so a chevron icon cannot be one.
+*/
+details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details > summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 0.5rem;
+  color: var(--accent-ink);
+  transition: transform 120ms ease;
+}
+
+details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  details > summary::before {
+    transition: none;
+  }
 }

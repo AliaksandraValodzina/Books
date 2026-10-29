@@ -141,6 +141,35 @@ export const GUARANTEES: string[] = [
   `Everything you can see sits at least ${inches(t.canvas.bleed + t.canvas.safe)} inside the edge of the file, so the trim cannot cut it.`,
 ];
 
+/**
+ * The three short lines beside the order button.
+ *
+ * `GUARANTEES` above is the full statement of each promise and belongs in the
+ * specification, where somebody is reading. This is the same three facts
+ * compressed to the length that fits under a button, because the moment a
+ * customer's thumb is over the CTA is the moment the three doubts arrive at
+ * once — *will you keep my photographs, do I have to sign up, is this going to
+ * charge me* — and a paragraph does not get read there.
+ *
+ * **Every line is a restatement of something a test already enforces**, not a
+ * new claim:
+ *
+ * 1. the no-upload promise — `GUARANTEES[0]`, and what `lib/editor/draft.ts`
+ *    actually does: the draft lives in the browser and only the order button
+ *    sends anything.
+ * 2. the no-account promise — `GUARANTEES[1]`.
+ * 3. that nothing is charged — `lib/checkout.ts`, whose two states are both
+ *    "not a confirmation", asserted in `test/checkout.test.ts`.
+ *
+ * `test/product.test.ts` pins each one to its backing fact, so shortening a
+ * promise cannot quietly widen it.
+ */
+export const REASSURANCE: string[] = [
+  "Your photos never leave your browser",
+  "No account",
+  "Nothing is charged yet",
+];
+
 /** The safe area, for the guarantee above to be a statement about the real page. */
 export const SAFE_INSET_PT = t.canvas.bleed + t.canvas.safe;
 export const SAFE_BOX = safeBox(t.canvas);

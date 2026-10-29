@@ -34,14 +34,28 @@ export default async function Checkout() {
   const copy = copyFor(state);
 
   return (
+    /*
+      Dressed in the same register as the selling page — the display face for
+      the heading, the tokens for everything else. A customer who presses the
+      order button and lands somewhere that looks like a different site reads
+      that as the payment step having gone wrong, which is the one impression
+      this screen exists to avoid.
+
+      The button is `bg-ink`, not the accent. The accent means "this is the
+      desirable thing" and the desirable thing on this page is going back to
+      the page they made, not a second attempt at a checkout that does not
+      exist.
+    */
     <main className="mx-auto w-full max-w-[34rem] px-5 py-14">
-      <h1 className="text-2xl font-semibold">{copy.heading}</h1>
-      <p className="mt-4 opacity-85">{copy.body}</p>
-      <p className="mt-3 text-sm opacity-70">{copy.honest}</p>
+      <h1 className="font-display text-[1.75rem] font-normal leading-tight tracking-[-0.01em]">
+        {copy.heading}
+      </h1>
+      <p className="mt-4 text-[1.0625rem] leading-[1.5]">{copy.body}</p>
+      <p className="mt-3 text-[0.9375rem] text-ink-soft">{copy.honest}</p>
 
       <p className="mt-8">
         <a
-          className="inline-block rounded-lg bg-[#2b1d14] px-5 py-3 font-medium text-[#efe9df]"
+          className="inline-flex h-14 items-center justify-center rounded-[10px] bg-ink px-6 text-[1.0625rem] font-semibold text-ground"
           href="/"
         >
           Back to your page
@@ -49,7 +63,7 @@ export default async function Checkout() {
       </p>
 
       {state.kind === "unconfigured" ? (
-        <p className="mt-10 border-t border-current/10 pt-5 text-xs opacity-55">
+        <p className="mt-10 border-t border-rule pt-5 text-[0.8125rem] text-ink-soft">
           For whoever is deploying this: set{" "}
           {state.missing.map((name) => (
             <code key={name}>{name}</code>
