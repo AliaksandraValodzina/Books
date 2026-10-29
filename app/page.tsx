@@ -62,7 +62,6 @@ import {
 import DraftProvider from "./_components/DraftProvider";
 import Editor from "./_components/Editor";
 import BuyButton from "./_components/BuyButton";
-import StickyOrderBar from "./_components/StickyOrderBar";
 
 export const dynamic = "force-dynamic";
 
@@ -367,14 +366,30 @@ export default async function Home({
         </footer>
       </main>
 
-      <StickyOrderBar />
-
       {/*
-        A statement about this page that only a render can check, kept honest by
-        a test rather than by a comment: `test/funnel.test.tsx` asserts there are
-        exactly two `<svg>` elements here — the object and the editor's own page
-        — so no decorative icon can quietly become a third, and the count stays
-        a proof that both of the real ones drew something.
+        **The one thing in §9 that is not built, and the measurement that says
+        why.** Its layout sketch ends with a sticky bottom bar on phones, taken
+        from Artifact Uprising's `au-05`.
+
+        Built and then removed. A bar like that is worth its 56px only while the
+        customer is past the thing they came for and short of the button, and on
+        this page that stretch does not exist: the editor ends at 1786px and the
+        order section starts at 2640px, a gap of 854px — one phone viewport. Set
+        to appear only when it overlaps neither, it showed for **10px of scroll**
+        at 390x844 and 190px on a shorter phone. The only way to widen that is
+        to let it sit over the editor's zoom sliders and word fields, which is
+        the one thing §9 says the scroll budget cannot afford.
+
+        Artifact Uprising's page is a catalogue and ours is an editor. When this
+        page grows — a second page of the book, a photograph section, reviews —
+        the gap grows with it and the bar starts earning its place. Until then
+        it is a control that flashes past.
+
+        One other statement about this page is kept honest by a test rather than
+        by a comment: `test/funnel.test.tsx` asserts there are exactly two
+        `<svg>` elements here — the object and the editor's own page — so no
+        decorative icon can quietly become a third, and the count stays a proof
+        that both of the real ones drew something.
       */}
     </div>
   );

@@ -122,11 +122,19 @@ export default function BuyButton() {
         promise a test already enforces — see `REASSURANCE` in
         `lib/product.ts`, which carries the provenance of all three.
       */}
-      <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[0.8125rem] text-ink-soft">
+      {/*
+        One per line on a phone, one line with separators from `sm` up.
+
+        The three do not fit across 390px, and wrapping a separated row strands
+        the dot at the start of the second line, which reads as a bullet nobody
+        meant. Stacking them is also simply easier to take in at the moment the
+        thumb is over the button, which is the only moment this strip is for.
+      */}
+      <ul className="mt-5 flex flex-col items-center gap-y-1.5 text-[0.8125rem] text-ink-soft sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3">
         {REASSURANCE.map((line, i) => (
           <li key={line} className="flex items-center gap-3">
             {i > 0 ? (
-              <span aria-hidden="true" className="text-rule">
+              <span aria-hidden="true" className="hidden text-rule sm:inline">
                 ·
               </span>
             ) : null}
