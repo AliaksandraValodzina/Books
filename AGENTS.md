@@ -10,9 +10,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Books
 
-Personalised printed photo book pages. `README.md` is the orientation; the two
-documents that decide everything else are `docs/template-format.md` and
-`docs/print.md`.
+Personalised printed books. `README.md` is the orientation; the documents that
+decide everything else are `docs/template-format.md`, `docs/print.md`,
+`docs/look-upload-contract.md` and `docs/pricing.md`.
+
+**Two titles, one machinery.** "The Book of You" (`templates/first-book.ts`) is
+the product at `/`; "My Forever" (`templates/my-forever.ts`) is the single
+keepsake page it was built on, at `/my-forever`. A book is a list of pages plus
+a looks axis (`lib/book/types.ts`), and `lib/book/derive.ts` turns one of its
+pages into the `PageTemplate` the renderer has always drawn — **nothing
+downstream of `derive.ts` knows books exist.** Add a book capability there or
+in the format, never in a component.
 
 ## The three rules this codebase is built on
 
@@ -62,15 +70,47 @@ replacement string when they disagree. Everything a customer types goes through
 ## Facts the repository does not have
 
 `lib/product.ts` is a union whose only `value` field is on the
-`confirmed: true` arm, so a price nobody has supplied cannot be written. Price,
-pages, paper and the delivery window are all still open — add the number *and*
-flip the arm, never one or the other.
+`confirmed: true` arm, so a price nobody has supplied cannot be written — add
+the number *and* flip the arm, never one or the other. `lib/book/editions.ts`
+plays the same trick with money: it has fields for a price and no field for a
+"was", a percentage or an expiry, so a misleading price comparison is
+unrepresentable rather than discouraged. `docs/pricing.md` says why that is a
+legal position and not a taste one.
+
+**The open question nobody may close by accident is the trim.** The book
+declares an 8.00 in trim at 3600 px a page; what Printify actually asks for is
+unread, and 3150 (My Forever's number) matches no square trim at 300 DPI. The
+page size is declared data on the book, so the answer is an edit to
+`page.canvas`/`page.print` and a restamp — and no test or component reads a page
+size from anywhere else. `docs/print.md` § The square trim nobody has pinned
+down.
+
+## The buyer flow is a form, not an editor
+
+The shape is settled by research: one step that says so, straight into the
+whole book with **no watermark, no account and no wall**, the extras offered on
+the spread they affect, and one `Continue`. `test/book-flow.test.tsx` asserts
+the absence of the wall rather than trusting anybody to remember it.
+
+**The opening spread is babyless on purpose.** It is the one spread identical
+across every look, which is exactly why it carries the buyer's photograph,
+dedication and from-line — switching look cannot reflow anything they typed.
+The consequence to remember: the chooser's tiles must come from a page with a
+baby on it, which is why `BookTemplate.tilePage` is declared and `validateBook`
+refuses a babyless one.
+
+**Crop is the one thing the buyer may move**, and it moves nothing on the page:
+a gesture becomes a `PhotoView`, `cropFor` turns it into the `Crop` the format
+already defines, and an untouched photograph writes **no crop field at all** —
+which is what keeps `orderFingerprint` stable and a reprint of an old order the
+same document.
 
 ## Two things that will bite
 
 **Restamp the template.** `templates/*.ts` carry `rev`, eight hex of their own
-content hash. Edit a template and `npm run print` refuses until `rev` is
-updated — it prints the value to use. `test/template.test.ts` asserts it too.
+content hash. Edit a template and `npm run print` (or `npm run book`) refuses
+until `rev` is updated — it prints the value to use. `test/template.test.ts`
+and `test/book-format.test.ts` assert it too.
 
 **Keep the render deterministic.** Every wobble comes from a seeded
 `mulberry32` in `lib/render/random.ts`. `Math.random` anywhere in a render path
@@ -91,6 +131,19 @@ would pass if the renderer drew nothing is not a test: every content assertion
 is paired with the same assertion against a render with that layer removed. A
 quick way to check a new test earns its place is to mutate the code it covers
 and confirm it goes red.
+
+**Derive the numbers a test asserts, never type them.** Boxes come from the
+template's own slots, floors from the slot that implies them, counts from the
+list. The trim is an open question, so a suite full of hand-typed coordinates
+is a suite that has to be rewritten the day it is answered — and in the
+meantime every one of those assertions points at empty cream without saying so.
+
+**React here is glue and is tested without a browser.** There is no DOM in the
+suite: component tests render with `renderToStaticMarkup`, so effects do not
+run and only the state a visitor arrives in is visible. Everything stateful
+lives in `lib/` as a pure function and is tested there. A component that needs
+a value tested should take it as a prop — that is why `app/_book/Confirm.tsx`
+does.
 
 ## Secrets
 

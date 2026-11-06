@@ -2,9 +2,16 @@ import type { Metadata } from "next";
 import { fontFaceCss } from "../lib/render/fonts";
 import "./globals.css";
 
+/**
+ * The default for any page that does not set its own.
+ *
+ * It names the shop rather than a title, because as of 6 November
+ * books.keepnook.app sells the baby book and "My Forever" is the technical
+ * spine behind it at `/my-forever`, which sets its own.
+ */
 export const metadata: Metadata = {
-  title: "Books — My Forever",
-  description: "A personalised printed photo book page, rendered from its template.",
+  title: "Books — personalised printed books",
+  description: "Personalised printed books, rendered from a template that is data.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

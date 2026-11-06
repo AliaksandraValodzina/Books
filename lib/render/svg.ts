@@ -41,7 +41,17 @@ import type {
   TextSlotLayer,
   AssetRef,
 } from "../template/types";
-import { cropOf, lineHeightOf, maskOf, opacityOf, rotationOf, textOf } from "../template/defaults";
+import {
+  cropOf,
+  lineHeightOf,
+  maskOf,
+  maxCharsPerLineOf,
+  maxLinesOf,
+  measuredLength,
+  opacityOf,
+  rotationOf,
+  textOf,
+} from "../template/defaults";
 import { centreOf, maskPath, placePhoto, r, roundedRectPath } from "../template/geometry";
 import { drawArt, shadowFilter } from "./decoration";
 import { familyOf } from "./fonts";
@@ -150,6 +160,32 @@ export function textAnchorPoint(layer: TextSlotLayer): { x: number; y: number } 
 }
 
 /**
+ * A fill the slot it was given cannot hold.
+ *
+ * **Thrown rather than clipped, and thrown here rather than only checked
+ * upstream.** `../template/validate.ts` refuses an over-long fill before money
+ * changes hands and `lib/editor/` refuses it as it is typed, so reaching this
+ * means a hand-edited document, a newer publisher, or a bug — and the right
+ * answer to all three is a loud failure in front of whoever is holding the
+ * file. The alternative is a page whose last line is printed past the bottom
+ * edge, which nobody sees until a book is in a box; the brief's *"text overflow
+ * on a printed page cannot be undone"* is this class's whole reason to exist.
+ *
+ * It is a refusal and not a truncation because truncating is the same decision
+ * made silently: a dedication that ends mid-sentence in a printed book is as
+ * wrong as one that runs off it, and far harder to notice in a preview.
+ */
+export class TextOverflows extends Error {
+  constructor(
+    readonly slot: string,
+    detail: string,
+  ) {
+    super(`text slot "${slot}" ${detail}`);
+    this.name = "TextOverflows";
+  }
+}
+
+/**
  * One of the customer's words.
  *
  * `frame` is a genuine rectangle — the box `../template/validate.ts` checks
@@ -157,21 +193,53 @@ export function textAnchorPoint(layer: TextSlotLayer): { x: number; y: number } 
  * text hangs off whichever edge of it `align` names, at the baseline the slot
  * declares. Nothing here measures the string: see the seam named at the top of
  * this file, and `TextSlotLayer.maxChars` for what is done about it instead.
+ *
+ * The two limits it *does* enforce are the ones measurement is not needed for.
+ * A character count and a line count are facts about the string rather than
+ * about a shaping engine, so checking them here costs nothing and keeps the
+ * one thing that cannot be undone — a line printed past the bottom of a page —
+ * out of reach of anything but a crash.
  */
 function drawTextSlot(layer: TextSlotLayer, fill: PageFill): string {
   const raw = fill.texts?.[layer.slot];
   if (typeof raw !== "string" || raw.length === 0) return "";
+  const length = measuredLength(layer, raw);
+  if (length > layer.maxChars) {
+    throw new TextOverflows(layer.slot, `holds ${length} characters, the slot takes ${layer.maxChars}`);
+  }
   const text = textOf(layer, raw);
   const lines = text.split("\n");
+  const maxLines = maxLinesOf(layer);
+  if (lines.length > maxLines) {
+    throw new TextOverflows(
+      layer.slot,
+      `holds ${lines.length} lines, the slot takes ${maxLines} — ` +
+        "the extra lines would be set below the bottom of the page",
+    );
+  }
+  const perLine = maxCharsPerLineOf(layer);
+  const widest = lines.reduce((most, line) => Math.max(most, line.length), 0);
+  if (widest > perLine) {
+    throw new TextOverflows(
+      layer.slot,
+      `has a line of ${widest} characters, the slot takes ${perLine} across — ` +
+        "it would be set off both sides of the page",
+    );
+  }
   const lh = lineHeightOf(layer);
   const anchor = layer.align ?? "start";
   const tracking = layer.letterSpacing ? ` letter-spacing="${r(layer.letterSpacing)}"` : "";
   const at = textAnchorPoint(layer);
 
+  // Every line carries an **absolute** baseline rather than a `dy` from the one
+  // before it. A relative offset is lost whenever a line is empty — a shaper is
+  // entitled to drop a `<tspan>` with no content, and `resvg` does — so a blank
+  // line in a dedication silently closes up in the print file while a browser
+  // may keep it. That is a screen/print divergence produced by pressing Return
+  // twice, which is exactly the class of difference this renderer exists to
+  // make impossible.
   const tspans = lines
-    .map(
-      (line, i) => `<tspan x="${r(at.x)}"${i === 0 ? "" : ` dy="${r(lh)}"`}>${esc(line)}</tspan>`,
-    )
+    .map((line, i) => `<tspan x="${r(at.x)}" y="${r(at.y + lh * i)}">${esc(line)}</tspan>`)
     .join("");
 
   return (

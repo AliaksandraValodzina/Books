@@ -69,12 +69,19 @@ jobs:
       # from the renderer is worse than none: `data/` is what a reviewer reads
       # to see what the page looks like. `npm run print` also refuses outright
       # when a template has been edited without restamping its `rev`.
-      - name: The committed print file is still what the renderer produces
+      # **Both titles, because there are two.** `npm run print` re-renders My
+      # Forever and `npm run book` re-renders the book's three evidence pages
+      # and its sample PDF. Running only one of them would leave the other's
+      # `data/` free to drift — and both refuse outright when a template has
+      # been edited without restamping its `rev`, which is the cheapest place
+      # for that mistake to be caught.
+      - name: The committed print files are still what the renderer produces
         if: ${{ !cancelled() }}
         run: |
           npm run print
+          npm run book
           if ! git diff --quiet -- data/; then
-            echo "::error::data/ is stale. Run 'npm run print' and commit the result."
+            echo "::error::data/ is stale. Run 'npm run print' and 'npm run book', and commit the result."
             git --no-pager diff --stat -- data/
             exit 1
           fi

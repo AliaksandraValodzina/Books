@@ -79,6 +79,45 @@ export function textOf(t: { transform?: "none" | "uppercase" }, raw: string): st
   return t.transform === "uppercase" ? raw.toUpperCase() : raw;
 }
 
+/**
+ * The most lines this slot accepts. Absent, zero, fractional or negative is
+ * `1`.
+ *
+ * Absent meaning one is the stricter reading, and `TextSlotLayer.maxLines` says
+ * why that is the right direction: a designer who said nothing about lines
+ * sized the box for a word.
+ */
+export function maxLinesOf(t: { maxLines?: number }): number {
+  const n = num(t.maxLines, 1);
+  return Number.isInteger(n) && n > 0 ? n : 1;
+}
+
+/**
+ * The most characters one line accepts. Absent, zero or negative is `maxChars`
+ * — the overall budget, which is the same as no extra constraint.
+ */
+export function maxCharsPerLineOf(t: { maxChars: number; maxCharsPerLine?: number }): number {
+  const n = num(t.maxCharsPerLine, t.maxChars);
+  return Number.isInteger(n) && n > 0 ? n : t.maxChars;
+}
+
+/**
+ * How long this fill counts as, for the one limit that refuses it.
+ *
+ * The larger of what the buyer typed and what will actually be set, because
+ * `transform: "uppercase"` can *lengthen* a string — German ß becomes SS — and
+ * a limit measured on the shorter of the two is a limit the printed page does
+ * not obey. Exported so the editor's counter, the validator's refusal and the
+ * renderer's backstop are all one function; three implementations of "how long
+ * is this" is three chances to disagree in front of a paying customer.
+ */
+export function measuredLength(
+  t: { transform?: "none" | "uppercase" },
+  raw: string,
+): number {
+  return Math.max(raw.length, textOf(t, raw).length);
+}
+
 /** The box the guillotine leaves: the artboard inset by `bleed`. */
 export function trimBox(c: Canvas): Box {
   const b = Math.max(num(c.bleed, 0), 0);

@@ -180,6 +180,55 @@ export type Art =
       /** How many lip creases are drawn. More reads as a drier lipstick. */
       creases: number;
       seed: number;
+    }
+  /**
+   * A full-bleed nursery scene with a baby in it: a wash ground, a floor band,
+   * a soft prop, and a swaddled figure.
+   *
+   * **This is a stand-in for artwork, and it says so.** `lib/book/types.ts`
+   * § `PageArt` is the argument: a book's pages are *finished uploaded images*
+   * in production, and this kind exists so the whole buyer flow — the chooser,
+   * the whole-book preview, the print file — is live, deployed and tested
+   * before a single PNG has been generated. It is a `drawn` page's artwork and
+   * never a layer a published book with artwork would carry.
+   *
+   * It is drawn rather than fetched for the same two reasons everything else in
+   * `lib/render/decoration.ts` is: it has no resolution, so a 3600 px print
+   * file from it is genuinely 3600 px rather than an upscale, and there is no
+   * file in it so there is no licence in it either.
+   *
+   * The baby's colours come from the chosen `Look` and everything else from the
+   * page, which is how two looks of one book are structurally incapable of
+   * having different kitchens.
+   */
+  | {
+      kind: "scene";
+      /** The wash behind everything. */
+      ground: Colour;
+      /** The band across the lower part of the page. */
+      floor: Colour;
+      /** The soft shape the baby is in or on. */
+      prop: Colour;
+      /** The baby's centre, 0–1 of the frame. Absent is `{ x: 0.5, y: 0.6 }`. */
+      babyAt?: { x: number; y: number };
+      /** The baby's height, 0–1 of the frame height. Absent is `0.34`. */
+      babySize?: number;
+      /**
+       * Draw the ground and nothing in it. Absent is `false`.
+       *
+       * **A page with no baby on it is a real page, not a missing one.** The
+       * book's opening spread is deliberately babyless — it is the one spread
+       * that is identical across every look, which is exactly why it is the
+       * spread that carries the buyer's photograph and dedication. A flag is
+       * the honest way to say that: the alternative is a figure scaled to
+       * nothing, which is a figure that is still there and still has to be
+       * drawn around.
+       */
+      babyless?: boolean;
+      skin: Colour;
+      hair: Colour;
+      cloth: Colour;
+      seed: number;
     };
 
 /** A flat or rounded panel — the white card this page's hearts sit on. */
@@ -315,6 +364,47 @@ export interface TextSlotLayer extends LayerBase {
    * § The text that did not fit.
    */
   maxChars: number;
+  /**
+   * The most lines this slot accepts. **Absent is `1`.**
+   *
+   * `maxChars` alone is not enough for anything a customer can press Return
+   * in. Eighty characters fit a two-line box and do not fit it as twelve lines
+   * of one word — and `drawTextSlot` sets each line `lineHeight` below the last
+   * without ever looking at where the box ends, so the eleventh line is printed
+   * somewhere past the bottom of the page. Nobody sees that until the book
+   * arrives, which is the brief's *"text overflow on a printed page cannot be
+   * undone"* exactly.
+   *
+   * Absent meaning **one** is the stricter reading and the right one: a
+   * designer who said nothing about lines sized the box for a word, and every
+   * slot that predates this field holds a single word.
+   *
+   * It is enforced in **three** places, which is one more than looks
+   * necessary. `lib/editor/lines.ts` stops a buyer exceeding it as they type;
+   * `./validate.ts` refuses a fill that does, before money changes hands; and
+   * `lib/render/svg.ts` **throws rather than draw past it**. The third is the
+   * only one that a hand-edited fill, a future bug or a newer publisher cannot
+   * walk around, and it is the one standing between a mistake and a press.
+   */
+  maxLines?: number;
+  /**
+   * The most characters one line of this slot accepts. **Absent is `maxChars`**
+   * — that is, no constraint beyond the overall budget.
+   *
+   * This is the third limit and the one that is least obvious. `maxLines` stops
+   * a buyer pushing a line off the *bottom* of the page; it says nothing about
+   * three hundred characters typed without once pressing Return, which is one
+   * line and runs off **both sides**. The renderer measures nothing, so a
+   * character count per line is the only tool available — and it is enough,
+   * because a designer sizing a box already knows roughly how many characters
+   * of a given face fit across it and can declare the number they sized for.
+   *
+   * `lib/editor/lines.ts` uses it to **wrap** rather than to refuse: a
+   * dedication is prose, and breaking it at the last space before the limit is
+   * what the buyer expected a text box to do anyway. The refusal lives at the
+   * other two limits, where there is no sensible automatic answer.
+   */
+  maxCharsPerLine?: number;
 }
 
 export type Layer = DecorationLayer | PhotoSlotLayer | TextSlotLayer;

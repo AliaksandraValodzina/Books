@@ -105,6 +105,20 @@ const INVISIBLE =
  */
 const WHITESPACE_CONTROL = /[\u0009-\u000d]/g;
 
+/**
+ * Everything in `INVISIBLE`, removed.
+ *
+ * Exported for `./lines.ts`, which has the same problem with the same list and
+ * must not have a second copy of it: a zero-width joiner pasted into a
+ * dedication is as invisible, and as impossible to describe in a bug report, as
+ * one pasted into a word. What `./lines.ts` cannot share is the *whitespace*
+ * handling — a newline is a line break there and a word boundary here — so that
+ * much is written twice, deliberately and in one place each.
+ */
+export function stripInvisible(raw: string): string {
+  return raw.replace(INVISIBLE, "");
+}
+
 /** Runs of whitespace collapse to one space, and the ends are trimmed. */
 function tidy(raw: string): string {
   return raw

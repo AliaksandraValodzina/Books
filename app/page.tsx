@@ -1,83 +1,92 @@
 /**
- * **The selling page, which is the editor.**
+ * **books.keepnook.app — the baby book.**
  *
- * The order of what follows is the argument, not a layout preference. For a
- * gift like this the buyer's real question is not "is this nice" — it is *"will
- * mine look as good as yours?"*. Every example uses beautiful couples and
- * beautiful photographs, and the customer has blurry phone pictures and doubts.
- * You answer that by letting them put **their own two photographs into the
- * hearts before paying anything**, so:
+ * The captain's decision of 6 November: *"the baby book takes
+ * books.keepnook.app."* "My Forever", the heart-and-photograph keepsake page
+ * that used to be here, steps back to being the technical spine and lives at
+ * [`/my-forever`](./my-forever/page.tsx). It is not deleted — it is the proven
+ * template-and-renderer example and may return as a second title.
  *
- * 1. **The object**, small and honest — see the note on `ObjectBand` for what
- *    this is a picture *of*, which is a real weakness and is flagged rather
- *    than papered over.
- * 2. **One line** saying who it is for.
- * 3. **The editor**, which is the hero and is above the fold on a phone.
- * 4. **What you get**, plainly, with everything nobody has a number for marked
- *    as such instead of guessed.
- * 5. **When it arrives** — the one a gift stands or falls on, and a clearly
- *    marked placeholder because the real window is not known here.
- * 6. **The order button.**
+ * The order of what follows is the argument, not a layout preference, and it is
+ * the shape three narrative-book sellers independently arrived at:
  *
- * The static sections stay **server components**: `DraftProvider` is a client
- * component wrapping server-rendered children, so the facts and the guarantees
- * cost no JavaScript while the button at the bottom still knows whether the
- * editor at the top is finished.
+ * 1. **The object**, small and honest — a render of the cover, captioned as a
+ *    render, because nothing has been printed yet.
+ * 2. **One line** saying what it is.
+ * 3. **The form**, labelled *Step 1 of 1*: a name, the question before the
+ *    grid, and the grid of babies. `./_book/Chooser.tsx` carries the reasoning.
+ * 4. **Straight into the whole book** at `/preview` — every page, no watermark,
+ *    no account, no wall.
  *
- * **It draws nothing itself.** The page the customer edits comes from
- * `renderPageSvg` — the same call the print path makes.
+ * The static parts stay **server components**: `BookProvider` is a client
+ * component wrapping server-rendered children, so the facts cost no JavaScript
+ * while the form above them knows the state of the order.
+ *
+ * **It draws nothing itself.** The cover comes from `renderPageSvg` — the same
+ * call the print path makes.
  */
 
-import { MY_FOREVER } from "../templates/my-forever";
-import { FIXTURE_FILL } from "../fixtures/order";
+import type { Metadata } from "next";
+import { FIRST_BOOK } from "../templates/first-book";
+import { pageFillFor, pageTemplateFor } from "../lib/book/derive";
 import { renderPageSvg } from "../lib/render/svg";
 import { assetUrl } from "../lib/assets/resolve";
-import {
-  DELIVERY,
-  GUARANTEES,
-  PLACEHOLDER,
-  WHAT_YOU_GET,
-  WHO_IT_IS_FOR,
-  type Fact,
-} from "../lib/product";
-import DraftProvider from "./_components/DraftProvider";
-import Editor from "./_components/Editor";
-import BuyButton from "./_components/BuyButton";
+import { PLACEHOLDER, type Fact } from "../lib/product";
+import { BOOK_FACTS, BOOK_GUARANTEES, BOOK_PROMISES } from "../lib/book/product";
+import { EDITIONS, priceOf } from "../lib/book/editions";
+import BookProvider from "./_book/BookProvider";
+import Chooser from "./_book/Chooser";
 
 export const dynamic = "force-dynamic";
 
-const template = MY_FOREVER;
+export const metadata: Metadata = {
+  title: "The Book of You — a printed book with their name in it",
+  description:
+    "Twelve spreads of a day in their life, with their name through the story, one of your own photographs, and a dedication in the front.",
+};
+
+const book = FIRST_BOOK;
 
 /**
  * **1. The object.**
  *
- * This is a *render*, not a photograph of a printed book, because there is no
- * photograph of a printed book in this repository — nothing has been printed
- * yet. That is a real weakness and the caption says so rather than letting a
- * flat picture imply an object: a render does not feel like a thing you can
- * hold, and "here is the page" sells worse than a photograph of it in
- * somebody's hands. **The captain needs to take that photograph.** When there
- * is one it replaces this and the caption goes.
+ * A *render* of the cover, not a photograph of a printed book, because there is
+ * no photograph of a printed book in this repository — nothing has been printed
+ * yet. The caption says so rather than letting a flat picture imply an object.
+ * **The captain needs to take that photograph**; when there is one it replaces
+ * this and the caption goes.
  *
- * It is the finished example — the fixture fill — deliberately kept small and
- * beside the line of copy. Showing "ours" next to the editor's "yours" is the
- * selling mechanism; showing it large would push the editor below the fold,
- * which costs more than the picture gains.
+ * It carries a real name because a blank cover sells nothing, and it is the
+ * fixture's name rather than an empty slot so that what a visitor sees first is
+ * a finished book.
  */
-function ObjectBand({ guides }: { guides: boolean }) {
-  const svg = renderPageSvg(template, FIXTURE_FILL, { href: assetUrl, guides });
+function CoverBand() {
+  const svg = renderPageSvg(
+    pageTemplateFor(book, 0, { lookId: book.looks[0].id, coverId: book.covers[0].id }),
+    pageFillFor(book, 0, {
+      schema: 1,
+      bookId: book.id,
+      bookRev: book.rev,
+      lookId: book.looks[0].id,
+      coverId: book.covers[0].id,
+      name: "Rosalind",
+      dedication: "",
+    }),
+    { href: assetUrl },
+  );
+
   return (
     <div className="flex items-center gap-4">
       <div
-        className="w-[7.5rem] shrink-0 overflow-hidden rounded-lg shadow-xl shadow-black/25 [&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
+        className="w-[8rem] shrink-0 overflow-hidden rounded-lg shadow-xl shadow-black/25 [&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
         dangerouslySetInnerHTML={{ __html: svg }}
       />
       <div className="min-w-0">
-        <h1 className="text-xl font-semibold leading-tight sm:text-2xl">{template.name}</h1>
-        <p className="mt-1 text-sm opacity-75">{WHO_IT_IS_FOR}</p>
+        <h1 className="text-xl font-semibold leading-tight sm:text-2xl">{book.name}</h1>
+        <p className="mt-1 text-sm opacity-75">{book.blurb}</p>
         <p className="mt-1.5 text-[0.7rem] opacity-50">
-          A render of the page, not a photograph of the printed book — nothing has been printed
-          yet.
+          A render of the cover, not a photograph of the printed book — nothing has been printed
+          yet, and the artwork here is a placeholder.
         </p>
       </div>
     </div>
@@ -109,76 +118,82 @@ function FactRow({ fact }: { fact: Fact }) {
   );
 }
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ guides?: string }>;
-}) {
-  // The one screen affordance the print path does not have. `renderPrintSvg`
-  // takes no such argument, so a trim mark cannot reach a printed book — see
-  // the note on `RenderOptions.guides`.
-  const guides = (await searchParams).guides === "1";
-
+export default function Home() {
   return (
     <main className="mx-auto w-full max-w-[42rem] px-4 py-6 sm:px-6 sm:py-10">
-      <ObjectBand guides={guides} />
+      <CoverBand />
 
-      <DraftProvider template={template}>
-        <section className="mt-6" aria-label="Make your page">
-          <Editor guides={guides} />
-        </section>
+      <BookProvider book={book}>
+        <Chooser />
+      </BookProvider>
 
-        <section className="mt-12">
-          <h2 className="text-lg font-semibold">What you get</h2>
-          <dl className="mt-3">
-            {WHAT_YOU_GET.map((fact) => (
-              <FactRow key={fact.label} fact={fact} />
-            ))}
-          </dl>
-          <ul className="mt-4 space-y-1.5 text-sm opacity-80">
-            {GUARANTEES.map((line) => (
-              <li key={line} className="flex gap-2">
-                <span aria-hidden="true">·</span>
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-[0.72rem] opacity-55">
-            The marked rows are the ones nobody here has a number for. Writing a plausible price
-            and tidying it later would be a made-up commercial claim on a public page, and a
-            customer cannot tell a guess from a quote.
-          </p>
-        </section>
+      <section className="mt-14">
+        <h2 className="text-lg font-semibold">What you get</h2>
+        <dl className="mt-3">
+          {BOOK_FACTS.map((fact) => (
+            <FactRow key={fact.label} fact={fact} />
+          ))}
+        </dl>
+        <ul className="mt-4 space-y-1.5 text-sm opacity-80">
+          {BOOK_GUARANTEES.map((line) => (
+            <li key={line} className="flex gap-2">
+              <span aria-hidden="true">·</span>
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 text-[0.72rem] opacity-55">
+          The marked rows are the ones nobody here has a number for. Writing a plausible price and
+          tidying it later would be a made-up commercial claim on a public page, and a customer
+          cannot tell a guess from a quote.
+        </p>
+      </section>
 
-        <section className="mt-10">
-          <h2 className="text-lg font-semibold">{DELIVERY.label}</h2>
-          <div className="mt-3 rounded-xl border-2 border-dashed border-[#B22741]/40 p-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-[#8e1c33]">
-              {PLACEHOLDER}
-            </p>
-            <p className="mt-2 text-sm opacity-80">
-              {DELIVERY.confirmed ? DELIVERY.value : DELIVERY.needs}
-            </p>
-          </div>
-        </section>
+      {/*
+        **One real price, and the upgrade beside it rather than above it.**
 
-        <section className="mt-10">
-          <BuyButton />
-        </section>
-      </DraftProvider>
+        No struck-out "was", no percentage, no countdown, and nothing in
+        `lib/book/editions.ts` that could express one — the register the captain
+        settled is premium and honest, and `docs/pricing.md` carries the legal
+        reasoning for why a fabricated comparison is not merely tasteless. The
+        launch offer they intend is real but has no end date yet, and an offer
+        with no stated end is exactly the mechanic being avoided, so it is
+        absent rather than approximated.
+      */}
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold">What it costs</h2>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          {EDITIONS.map((edition) => (
+            <li key={edition.id} className="rounded-xl border border-current/15 p-3">
+              <p className="flex items-baseline justify-between gap-2">
+                <span className="font-semibold">{edition.label}</span>
+                <span className="tabular-nums">{priceOf(edition.price)}</span>
+              </p>
+              <p className="mt-1 text-sm opacity-70">{edition.note}</p>
+            </li>
+          ))}
+        </ul>
+        <ul className="mt-4 space-y-1.5 text-sm opacity-80">
+          {BOOK_PROMISES.map((line) => (
+            <li key={line} className="flex gap-2">
+              <span aria-hidden="true">·</span>
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <footer className="mt-14 border-t border-current/10 pt-5 text-xs opacity-55">
         <p>
-          {template.name} — {template.id} @ {template.rev}. The page above and the print file are
-          one renderer reading one description; see <code>docs/template-format.md</code> and{" "}
-          <code>docs/print.md</code>.
+          {book.name} — {book.id} @ {book.rev}. {book.pages.length} interior pages and a cover, all
+          drawn by one renderer from one description; see <code>docs/template-format.md</code>,{" "}
+          <code>docs/look-upload-contract.md</code> and <code>docs/print.md</code>.
         </p>
         <p className="mt-2">
-          <a className="underline" href={guides ? "/" : "/?guides=1"}>
-            {guides ? "Hide the trim and safe guides" : "Show the trim and safe guides"}
+          <a className="underline" href="/my-forever">
+            My Forever
           </a>{" "}
-          — a screen affordance only. The print path does not offer the option, so a trim mark
-          cannot reach a printed book.
+          — the single keepsake page this book&rsquo;s machinery was built on, still here.
         </p>
       </footer>
     </main>

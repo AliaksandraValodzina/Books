@@ -80,13 +80,32 @@ describe("where a word hangs from", () => {
 
 describe("the output", () => {
   it("escapes what a customer typed", () => {
+    // Short on purpose: `wordTop` takes eight characters and the renderer now
+    // **refuses** a longer fill rather than drawing it (`TextOverflows`), so a
+    // sixteen-character payload would never reach the escaping at all and this
+    // would be testing the wrong refusal. Six characters, all four of the ones
+    // `esc` has to handle.
     const mischief = renderPageSvg(
       MY_FOREVER,
-      { ...FIXTURE_FILL, texts: { ...FIXTURE_FILL.texts, wordTop: `</text><script/>` } },
+      { ...FIXTURE_FILL, texts: { ...FIXTURE_FILL.texts, wordTop: `<b/>&"` } },
       { href: assetUrl },
     );
-    expect(mischief).not.toContain("<script");
-    expect(mischief).toContain("&lt;/text&gt;");
+    expect(mischief).not.toContain("<b/>");
+    expect(mischief).toContain("&lt;b/&gt;&amp;&quot;");
+  });
+
+  it("refuses a longer payload outright rather than drawing it", () => {
+    // The other half of the same safety story, and the stronger half: a fill
+    // the slot cannot hold does not get escaped and squeezed in, it stops the
+    // render. `lib/render/svg.ts`'s `TextOverflows` says why that is the right
+    // direction for a page that is about to be printed.
+    expect(() =>
+      renderPageSvg(
+        MY_FOREVER,
+        { ...FIXTURE_FILL, texts: { ...FIXTURE_FILL.texts, wordTop: `</text><script/>` } },
+        { href: assetUrl },
+      ),
+    ).toThrow(/wordTop/);
   });
 
   it("draws nothing for a slot the fill has no word for", () => {

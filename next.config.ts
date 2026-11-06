@@ -24,6 +24,16 @@ const config: NextConfig = {
   outputFileTracingIncludes: {
     "/api/print": ["./public/fonts/*.ttf", "./fixtures/assets/*"],
     "/api/assets/[key]": ["./fixtures/assets/*"],
+    "/my-forever": ["./fixtures/assets/*"],
+    "/api/book/print": ["./public/fonts/*.ttf", "./fixtures/assets/*"],
+    /**
+     * The shop's own page renders the book's cover through `assetUrl`.
+     *
+     * It draws a placeholder scene today and so reads nothing — but the moment
+     * `npm run looks:import` lands real artwork the cover becomes an `image`
+     * layer, and the first anybody would know is a deployed landing page with a
+     * blank cover on it. Listed now, while the reason is visible.
+     */
     "/": ["./fixtures/assets/*"],
   },
 };

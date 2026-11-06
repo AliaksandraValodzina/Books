@@ -1,15 +1,26 @@
 # Books
 
-Personalised printed photo books. A customer fills a designed page with their
-own photos and words, pays, and the finished page is downloaded as a
-print-ready file and uploaded to Printify.
+Personalised printed books. A buyer names a child, picks a baby from a grid,
+reads **the whole book** before paying, and the finished book is downloaded as a
+print-ready file and uploaded to a printer by hand.
 
 Sold from `books.keepnook.app`.
 
-**The selling page is the editor.** For a gift like this the buyer's real
-question is not "is this nice" but *"will mine look as good as yours?"* — so
-`/` puts two of their own photographs into the hearts before anything is paid
-for, before any account, and before any upload.
+**There is no wall.** The strongest finding in the research is that every
+narrative-book seller worth copying shows all of it — personalised, no
+watermark, no account, no email — so `/preview` does exactly that.
+
+## The two titles
+
+| | |
+|---|---|
+| **The Book of You** at `/` | the product: 24 interior pages and a cover, 12 looks, a buyer's photograph and dedication. [`templates/first-book.ts`](templates/first-book.ts) |
+| **My Forever** at `/my-forever` | the single keepsake page the machinery was built on. Still here, still the clearest example of the format. [`templates/my-forever.ts`](templates/my-forever.ts) |
+
+They share one format, one renderer and one print path. A book is **a list of
+pages plus a looks axis** — see [`lib/book/types.ts`](lib/book/types.ts) — and
+`lib/book/derive.ts` turns one of its pages into the `PageTemplate` the
+renderer has always drawn, so nothing downstream knows books exist.
 
 ---
 
@@ -20,22 +31,28 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-`/` is the shop: the object, one line saying who it is for, **the editor**,
-what you get, when it arrives, and the order button. Pick a photograph and it
-fills a heart; drag inside the heart to move it and pinch or use the slider to
-zoom. **See the real print file** posts the page you have made and hands back
-the actual 3150 × 3150 PNG. `/?guides=1` draws the trim and safe-area guides
-over it — a screen affordance only; the print path has no such option, so a
-trim mark cannot reach a book.
+`/` is the shop: the cover, one line saying what it is, and **Step 1 of 1** — a
+name, a girl-or-boy question, and a grid of babies. `/preview` is every page of
+the book with the extras offered on the spreads they affect, a persistent bar
+of what is done, and one `Continue` into a confirm-the-spelling screen and the
+stubbed till.
+
+`/my-forever` is the single-page editor; `/my-forever?guides=1` draws the trim
+and safe-area guides over it — a screen affordance only, so a trim mark cannot
+reach a book.
 
 ```sh
-npm test             # 378 tests
+npm test             # the whole suite
 npm run lint         # tsc --noEmit
 npm run build        # production build
-npm run print        # re-write the committed evidence in data/
+npm run print        # re-write My Forever's committed evidence in data/
+npm run book         # re-write the book's committed evidence in data/
+npm run book -- --all --out <dir>   # the whole 25-page PDF, ~25 s and ~9 MB
+npm run looks -- <dir>              # check an upload of artwork
+npm run looks:import -- <dir>       # take it into the repository
 ```
 
-All four run on every pull request — [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+All of them run on every pull request — [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 Nothing needs configuring. With no environment variables set the app serves the
 fixture photographs out of `fixtures/assets/`, which is the correct state until
@@ -85,18 +102,35 @@ is traced, sampled or copied. The two fixture photographs are generated too, by
 `scripts/make-fixture-photos.ts`, so the repository carries no real face and no
 stock licence.
 
-**The print file.** 3150 × 3150, sRGB, 300 DPI. The committed example and the
-test that measures it are described in
-[`data/bk-spine-template-and-print/`](data/bk-spine-template-and-print/). What
-was and was not established about Printify's bleed is
-[`docs/print.md`](docs/print.md) — read that one before changing the canvas.
+**The print file.** The book is **3600 × 3600 a page** on an 8.5 in artboard —
+an 8.00 in trim with a quarter inch of bleed — written as a PNG a page or one
+PDF of the whole book. My Forever is 3150 × 3150 at 300 DPI. The committed
+examples are [`data/bk-first-book-buyer-flow/`](data/bk-first-book-buyer-flow/)
+and [`data/bk-spine-template-and-print/`](data/bk-spine-template-and-print/).
+
+**What is still open about those numbers is [`docs/print.md`](docs/print.md) §
+The square trim nobody has pinned down — read it before changing a canvas.**
+The page size is declared data on the book, so the answer is an edit to two
+fields and a restamp.
+
+**The artwork contract.** What the captain generates, exactly, is
+[`docs/look-upload-contract.md`](docs/look-upload-contract.md), and
+`npm run looks` enforces it: wrong count, wrong size, a page that is not
+square, an alpha channel, a look whose page count disagrees with its siblings.
+A silent bad upload is a printed book with a white edge, and that is not
+visible in a browser.
+
+**What it costs, and what the page may say about it.**
+[`docs/pricing.md`](docs/pricing.md). Two real prices, one hardcover upgrade,
+and no struck-out "was" — the type has nowhere to put one.
 
 ---
 
 ## What is not built
 
-Stripe, accounts, the orders page, R2 storage, and page two. Each is its own
-task.
+Stripe, accounts, the orders page, R2 storage, and any printer integration.
+Each is its own task, and the last one is deliberately not coming: an order
+arrives, a file is produced, **a human uploads it**.
 
 The order button posts to `/api/checkout`, which reads `STRIPE_SECRET_KEY` and,
 finding none, answers 503 and sends the customer to a page that says plainly
@@ -117,13 +151,17 @@ lib/editor/       the editor's arithmetic, all pure: view (pan/zoom -> Crop),
                   typed), photo (resize and hash), draft (the document)
 lib/assets/       content-addressed assets: fixtures, R2, and bytes posted
                   with a render request
+lib/book/         a book: types, derive (a book page -> a PageTemplate), the
+                  order, the name's refusal, the photo floor, validation,
+                  the upload checker, editions and prices, rev
 lib/product.ts    what the shop claims, and what it admits it cannot claim
 lib/checkout.ts   whether this shop can take money
-templates/        pages, as data
-fixtures/         one hard-coded order, and the photographs it uses
-app/              the shop, the editor, /api/print, /api/checkout, /checkout
-test/             378 tests, including the pixel assertions
-docs/             the format, and the print file
+templates/        pages and books, as data
+fixtures/         two hard-coded orders, and the photographs they use
+app/              the shop and the chooser, /preview and the whole book,
+                  /my-forever, /api/book/print, /api/print, /api/checkout
+test/             the suite, including the pixel assertions
+docs/             the format, the print file, the upload contract, pricing
 data/             committed evidence
 ```
 

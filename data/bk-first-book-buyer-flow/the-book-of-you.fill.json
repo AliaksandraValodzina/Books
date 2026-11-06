@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "bookId": "the-book-of-you",
+  "bookRev": "169f8740",
+  "lookId": "wren",
+  "coverId": "sage",
+  "name": "Rosalind",
+  "photo": {
+    "asset": {
+      "sha256": "14b9fc70e10edb204c072b830bf6fcc8afbb4574188674e6a170252ca7915ff8",
+      "mime": "image/png",
+      "px": [
+        1100,
+        1500
+      ],
+      "label": "fixture — cool portrait"
+    }
+  },
+  "dedication": "For Rosalind,\nwho arrived on a Tuesday\nin the middle of the afternoon\nand changed everything.\n\nAll our love, always.",
+  "from": "Mum and Dad"
+}
