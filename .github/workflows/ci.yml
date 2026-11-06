@@ -70,18 +70,29 @@ jobs:
       # to see what the page looks like. `npm run print` also refuses outright
       # when a template has been edited without restamping its `rev`.
       # **Both titles, because there are two.** `npm run print` re-renders My
-      # Forever and `npm run book` re-renders the book's three evidence pages
-      # and its sample PDF. Running only one of them would leave the other's
-      # `data/` free to drift — and both refuse outright when a template has
-      # been edited without restamping its `rev`, which is the cheapest place
-      # for that mistake to be caught.
+      # Forever and `npm run book` re-renders the book's evidence pages and its
+      # sample PDF. Running only one of them would leave the other's `data/`
+      # free to drift — and both refuse outright when a template has been
+      # edited without restamping its `rev`, which is the cheapest place for
+      # that mistake to be caught.
+      #
+      # **The PDF is excluded from the byte comparison, and only the PDF.**
+      # Its image streams are deflated by Node's own zlib, and zlib builds
+      # disagree about which of several equally valid deflate streams to emit —
+      # so the same pixels produce a different file on this runner than on a
+      # laptop. That is a fact about zlib and says nothing about the renderer.
+      # The PNGs stay under byte equality because `@resvg/resvg-js` carries its
+      # own deflate and is pinned by the lockfile, and the PDF's *contents* are
+      # checked where they can be: `test/book-print.test.ts` renders one fresh,
+      # parses its page count and MediaBox back out of the bytes, and asserts
+      # two renders in one process are identical.
       - name: The committed print files are still what the renderer produces
         if: ${{ !cancelled() }}
         run: |
           npm run print
           npm run book
-          if ! git diff --quiet -- data/; then
+          if ! git diff --quiet -- data/ ':(exclude)data/**/*.pdf'; then
             echo "::error::data/ is stale. Run 'npm run print' and 'npm run book', and commit the result."
-            git --no-pager diff --stat -- data/
+            git --no-pager diff --stat -- data/ ':(exclude)data/**/*.pdf'
             exit 1
           fi

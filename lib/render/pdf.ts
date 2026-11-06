@@ -172,6 +172,24 @@ export function buildPdf(pages: PdfPage[], opts: PdfOptions): Uint8Array {
     write(`<< /Length ${content.length} >>\nstream\n${content}endstream\n`);
     end();
 
+    /**
+     * **These bytes are not reproducible across machines, and that is zlib's
+     * doing rather than this file's.**
+     *
+     * Several deflate streams decode to the same bytes, and which one a zlib
+     * build emits at a given level is an implementation detail that changes
+     * between zlib versions — so the same pixels give a byte-different PDF on
+     * a CI runner than on a laptop. Everything *in* the file is identical;
+     * only the packing differs.
+     *
+     * Two consequences, both designed for. `test/book-print.test.ts` asserts
+     * the PDF's page count and MediaBox by parsing them back out of the bytes,
+     * and asserts byte-equality only between two renders **in one process**,
+     * where the same zlib answers twice. And CI's "the committed print files
+     * are still what the renderer produces" step excludes `*.pdf` for this
+     * reason and nothing else — the PNGs stay under byte equality, because
+     * `@resvg/resvg-js` carries its own deflate and the lockfile pins it.
+     */
     const deflated = new Uint8Array(deflateSync(rgbOf(page), { level: 9 }));
     begin(imageObj);
     write(

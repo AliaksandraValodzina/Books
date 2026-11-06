@@ -216,6 +216,7 @@ this file at all. No screen lays out 3150 pixels to be photographed. Keepnook's
 | My Forever's file is 3150 × 3150 | **Verified** — read out of the PNG header by a passing test |
 | The book's pages are 3600 × 3600 | **Verified** — read out of the PNG header by a passing test |
 | The whole book opens as a PDF with a page per page | **Verified** — the container is parsed back out of its own bytes |
+| The committed sample PDF is byte-for-byte reproducible | **No, and deliberately not claimed** — its image streams are deflated by Node's zlib, and zlib builds emit different equally-valid streams for the same pixels. CI excludes `*.pdf` from its byte comparison for this reason only; the PNGs are not excluded |
 | Either file carries an sRGB chunk before IDAT | **Verified** — asserted on a fresh render |
 | The committed files are what the renderer produces today | **Verified** — byte-for-byte equality in a passing test |
 | Every slot sits ≥ 0.5 in inside the file edge | **Verified** — `slot.outsideSafeArea` would fire, and does when a slot is moved |
