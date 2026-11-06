@@ -45,11 +45,13 @@ import Editor from "../_components/Editor";
 import BuyButton from "../_components/BuyButton";
 
 import type { Metadata } from "next";
+import { pageTitle } from "../../lib/brand";
+import SiteFooter from "../_components/SiteFooter";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Books — My Forever",
+  title: pageTitle("My Forever"),
   description: "A personalised printed photo book page, rendered from its template.",
 };
 
@@ -174,7 +176,7 @@ export default async function Home({
         </section>
       </DraftProvider>
 
-      <footer className="mt-14 border-t border-current/10 pt-5 text-xs opacity-55">
+      <SiteFooter>
         <p>
           {template.name} — {template.id} @ {template.rev}. The page above and the print file are
           one renderer reading one description; see <code>docs/template-format.md</code> and{" "}
@@ -187,7 +189,7 @@ export default async function Home({
           — a screen affordance only. The print path does not offer the option, so a trim mark
           cannot reach a printed book.
         </p>
-      </footer>
+      </SiteFooter>
     </main>
   );
 }

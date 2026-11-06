@@ -1,8 +1,8 @@
 /**
- * **books.keepnook.app — the baby book.**
+ * **The shop's own front page — the baby book.**
  *
  * The captain's decision of 6 November: *"the baby book takes
- * books.keepnook.app."* "My Forever", the heart-and-photograph keepsake page
+ * the shop."* "My Forever", the heart-and-photograph keepsake page
  * that used to be here, steps back to being the technical spine and lives at
  * [`/my-forever`](./my-forever/page.tsx). It is not deleted — it is the proven
  * template-and-renderer example and may return as a second title.
@@ -36,6 +36,7 @@ import { BOOK_FACTS, BOOK_GUARANTEES, BOOK_PROMISES } from "../lib/book/product"
 import { EDITIONS, priceOf } from "../lib/book/editions";
 import BookProvider from "./_book/BookProvider";
 import Chooser from "./_book/Chooser";
+import SiteFooter from "./_components/SiteFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -183,7 +184,12 @@ export default function Home() {
         </ul>
       </section>
 
-      <footer className="mt-14 border-t border-current/10 pt-5 text-xs opacity-55">
+      {/*
+        The policy links come out of `lib/policy/pages.ts` by way of
+        `SiteFooter`, which is also what serves them — a footer that linked to
+        pages nothing answered is the situation this replaces.
+      */}
+      <SiteFooter>
         <p>
           {book.name} — {book.id} @ {book.rev}. {book.pages.length} interior pages and a cover, all
           drawn by one renderer from one description; see <code>docs/template-format.md</code>,{" "}
@@ -195,7 +201,7 @@ export default function Home() {
           </a>{" "}
           — the single keepsake page this book&rsquo;s machinery was built on, still here.
         </p>
-      </footer>
+      </SiteFooter>
     </main>
   );
 }

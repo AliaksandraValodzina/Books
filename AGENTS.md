@@ -14,6 +14,12 @@ Personalised printed books. `README.md` is the orientation; the documents that
 decide everything else are `docs/template-format.md`, `docs/print.md`,
 `docs/look-upload-contract.md` and `docs/pricing.md`.
 
+**The shop is "One Little Book" at `onelittlebook.com`.** It was Keepnook; every
+brand string — name, domain, support address — is in `lib/brand.ts` and nowhere
+else, so the next rename is one edit. The many references to *Keepnook* in
+`lib/`, `docs/` and `test/` are citations of a different codebase's prior art,
+not branding: do not replace them.
+
 **Two titles, one machinery.** "The Book of You" (`templates/first-book.ts`) is
 the product at `/`; "My Forever" (`templates/my-forever.ts`) is the single
 keepsake page it was built on, at `/my-forever`. A book is a list of pages plus
@@ -105,6 +111,43 @@ already defines, and an untouched photograph writes **no crop field at all** —
 which is what keeps `orderFingerprint` stable and a reprint of an old order the
 same document.
 
+## The money path
+
+**Nothing marks an order paid except the signature-verified webhook.**
+`lib/orders/receive.ts` is the only caller of `markPaid`, and the redirect back
+to `/order/[ref]` is treated as a URL anybody could type — which is what it is.
+The store, the clock and the sending of the email all arrive as arguments there
+so the flow is testable without a bucket; the route is HTTP glue.
+
+**An order lives in the R2 bucket, and it embeds a `BookFill` rather than
+restating one.** `lib/orders/store.ts` opens with the options considered and
+why. Its one promise is that a print file can be re-made from the record months
+later with no browser — `test/order-reprint.test.ts` is that sentence as an
+assertion, and it mints a photograph that is *not* in `fixtures/assets/` so the
+paired negative is real.
+
+**`lib/checkout.ts` § `REQUIRED` gates the whole path, not just the Stripe
+key.** A shop with a key and no webhook secret charges cards it can never
+confirm; with no bucket it takes money for a book nobody can print. Both refuse
+with 503 and name the empty rows. There is no pretend-success path for local
+work, deliberately.
+
+**No `stripe` dependency and no AWS SDK.** Two form-encoded calls
+(`lib/stripe/`) and SigV4 over `fetch` (`lib/orders/r2.ts`), each behind a
+`fetch` seam so the bytes on the wire are asserted rather than mocked. No test
+reaches a live bucket or a live Stripe.
+
+**`/admin` fails closed.** With `ADMIN_SECRET` unset nobody reaches the list, an
+order, a print file or a customer's photograph — the opposite of this
+repository's usual "inert rather than broken". `test/admin-guard.test.ts` reads
+every file under `app/admin/` and `app/api/admin/` and fails if one does not
+call `lib/admin/guard.ts` before doing any work.
+
+**Policies are data** (`lib/policy/pages.ts`) and the footer's links come out of
+the same list, because the footer used to link to pages nothing served. Every
+fact in them is derived — the dispatch window from the email, the countries from
+the list the Checkout Session is created with, the prices from `EDITIONS`.
+
 ## Two things that will bite
 
 **Restamp the template.** `templates/*.ts` carry `rev`, eight hex of their own
@@ -148,9 +191,15 @@ does.
 ## Secrets
 
 The repository is public. `.env.example` names every variable and carries no
-value for any of them. Two have a reader: `R2_PUBLIC_BASE_URL`, a public URL,
-and `STRIPE_SECRET_KEY`, read only by `lib/checkout.ts` to decide whether the
-shop is open. Its value is never logged, returned or rendered.
+value for any of them, and `test/checkout.test.ts` asserts both halves of that.
+`lib/env.ts` § `isSet` decides what counts as set — a blank row, a placeholder
+and a pasted variable name are all "unset", because those are what a dashboard
+holds after a hurried deploy.
+
+No secret is ever logged, returned or rendered. The money path's refusals name
+the *variables* and never a value; `lib/orders/r2.ts` § refuse and the Stripe
+and email modules each have a test asserting their key does not appear in what
+they return.
 
 ## Maintaining this file
 

@@ -30,12 +30,27 @@
  * `Continue` goes to `./Confirm.tsx` first and to the till after it. That is
  * the one interruption in the whole flow and `Confirm` argues for it: a name
  * inside artwork gets skimmed, and this is the last moment a typo is free.
+ *
+ * **The request to the till lives here**, because it needs the fill, the
+ * edition and the photograph's bytes, which are what `useBook()` holds.
+ * `Confirm` takes a callback instead so that it stays renderable without a
+ * browser — `./Confirm.tsx` § the button is here and the request is not.
+ *
+ * Two refusals, told apart deliberately:
+ *
+ * - **about the shop** (no Stripe key, no order store, Stripe would not
+ *   answer): the buyer goes to `/checkout`, which is the page that explains
+ *   those and says nothing has been charged.
+ * - **about this order** (a photograph the server will not accept, an order
+ *   that no longer validates): the message appears under the button and the
+ *   buyer keeps their place, because nothing is wrong with the shop and
+ *   navigating away would lose them the screen they can fix it on.
  */
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ASKS } from "../../lib/book/slots";
 import { editionOf, priceOf } from "../../lib/book/editions";
-import { outstanding } from "../../lib/book/order";
+import { bytesOf, outstanding } from "../../lib/book/order";
 import { nameSlotFont } from "../../lib/book/name";
 import { FACES } from "../../lib/render/fonts";
 import Confirm from "./Confirm";
@@ -44,8 +59,60 @@ import { useBook } from "./BookProvider";
 export default function Bar() {
   const { book, order, fill, setCover, done, ready, persistence } = useBook();
   const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
   const missing = outstanding(order, book);
   const edition = editionOf(order.editionId);
+
+  /**
+   * Send the order and go where the answer says.
+   *
+   * **It never renders anything resembling a confirmation itself.** The only
+   * two destinations are Stripe's own hosted page and `/checkout`, which is
+   * the honest refusal — `lib/checkout.ts` exists to make sure there is no
+   * third.
+   */
+  const buy = useCallback(async () => {
+    setBusy(true);
+    setProblem(null);
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ fill, editionId: order.editionId, photos: bytesOf(order) }),
+      });
+      const answer: unknown = await response.json().catch(() => null);
+      const url = (answer as { url?: string } | null)?.url;
+      if (response.ok && typeof url === "string") {
+        // Stripe's hosted page. A replace rather than an assign, so the back
+        // button from the card form returns to the book and not to a POST.
+        window.location.assign(url);
+        return;
+      }
+
+      const ref = (answer as { ref?: string } | null)?.ref;
+      if (response.status === 409 && ref) {
+        setProblem(`That order has already been paid for — it is ${ref}. Check your email.`);
+        return;
+      }
+      if (response.status === 422) {
+        const problems = (answer as { problems?: Array<{ code?: string }> } | null)?.problems;
+        setProblem(
+          "The shop would not accept this order: " +
+            (problems?.map((p) => p.code).filter(Boolean).join(", ") ?? "it did not validate") +
+            ". Nothing has been charged.",
+        );
+        return;
+      }
+      // Everything else is about the shop rather than about this order, and
+      // `/checkout` is the page that says so plainly.
+      window.location.assign("/checkout");
+    } catch {
+      setProblem("The till could not be reached. Nothing has been charged — try again.");
+    } finally {
+      setBusy(false);
+    }
+  }, [fill, order]);
 
   return (
     <div className="sticky bottom-0 z-10 -mx-4 mt-10 border-t border-current/15 bg-[var(--ground)]/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
@@ -58,6 +125,9 @@ export default function Bar() {
           face={FACES[nameSlotFont(book)]?.family}
           edition={edition}
           onBack={() => setConfirming(false)}
+          onConfirm={() => void buy()}
+          busy={busy}
+          problem={problem}
         />
       ) : (
         <>

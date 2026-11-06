@@ -4,7 +4,11 @@ Personalised printed books. A buyer names a child, picks a baby from a grid,
 reads **the whole book** before paying, and the finished book is downloaded as a
 print-ready file and uploaded to a printer by hand.
 
-Sold from `books.keepnook.app`.
+Sold as **One Little Book**, from `onelittlebook.com`. Every brand string — the
+name, the domain and the support address — lives in `lib/brand.ts` and nowhere
+else, so a rename is one edit; the references to *Keepnook* throughout `lib/`
+and `docs/` are citations of a different codebase's prior art and are not
+branding.
 
 **There is no wall.** The strongest finding in the research is that every
 narrative-book seller worth copying shows all of it — personalised, no
@@ -34,8 +38,10 @@ npm run dev          # http://localhost:3000
 `/` is the shop: the cover, one line saying what it is, and **Step 1 of 1** — a
 name, a girl-or-boy question, and a grid of babies. `/preview` is every page of
 the book with the extras offered on the spreads they affect, a persistent bar
-of what is done, and one `Continue` into a confirm-the-spelling screen and the
-stubbed till.
+of what is done, and one `Continue` into a confirm-the-spelling screen and a
+hosted Stripe Checkout Session. `/delivery`, `/getting-it-right`, `/privacy`
+and `/terms` are the policies; `/admin` is the owner's order list and is
+unreachable without `ADMIN_SECRET`.
 
 `/my-forever` is the single-page editor; `/my-forever?guides=1` draws the trim
 and safe-area guides over it — a screen affordance only, so a trim mark cannot
@@ -126,17 +132,35 @@ and no struck-out "was" — the type has nowhere to put one.
 
 ---
 
+## The money path
+
+**Hosted Stripe Checkout, and no card ever touches this site.** `/api/checkout`
+writes the order down, puts the buyer's photograph in the bucket beside it and
+creates a Checkout Session with `orderFingerprint` as the idempotency key, so a
+double-click is one order and one charge. The buyer types their card on
+`checkout.stripe.com`; `lib/orders/record.ts` has nowhere to put one.
+
+**Only a signature-verified webhook marks an order paid.** A redirect back to
+the site is a URL anybody could type. `/api/stripe/webhook` checks the
+signature, the timestamp and that Stripe says the money is actually there —
+`lib/orders/receive.ts` holds the decisions and is where the tests point.
+
+**With anything unconfigured it refuses, honestly.** `lib/checkout.ts`'s
+`REQUIRED` is every variable the path needs — the Stripe key, the webhook
+secret and the four R2 rows — and a missing one answers 503, names the empty
+rows and says nothing has been charged. There is no pretend-success path for
+local work.
+
+**An order is one JSON object in the R2 bucket**, and it is enough to re-render
+the exact print file months later with no browser involved;
+`lib/orders/store.ts` opens with the storage options considered and why this
+one won.
+
 ## What is not built
 
-Stripe, accounts, the orders page, R2 storage, and any printer integration.
-Each is its own task, and the last one is deliberately not coming: an order
-arrives, a file is produced, **a human uploads it**.
-
-The order button posts to `/api/checkout`, which reads `STRIPE_SECRET_KEY` and,
-finding none, answers 503 and sends the customer to a page that says plainly
-that nothing has been charged. Never a crash, and never a fake success — see
-[`lib/checkout.ts`](lib/checkout.ts). The captain adds the real key in Vercel;
-nobody shares a key with anybody.
+Any printer integration, which is deliberately not coming: an order arrives, a
+file is produced, **a human uploads it** from `/admin`. Also not built: buyer
+accounts, a resumable-book link, and the dispatch email with tracking.
 
 ---
 
@@ -154,12 +178,22 @@ lib/assets/       content-addressed assets: fixtures, R2, and bytes posted
 lib/book/         a book: types, derive (a book page -> a PageTemplate), the
                   order, the name's refusal, the photo floor, validation,
                   the upload checker, editions and prices, rev
+lib/orders/       the durable order: the record, the store and its reasoning,
+                  SigV4 against R2, the lifecycle, and receiving a webhook
+lib/stripe/       form encoding, the Checkout Session, signature verification
+lib/email/        the one email a buyer keeps, and sending it
+lib/admin/        the owner's door — one shared secret, failing closed
+lib/policy/       the four policy pages, as data
 lib/product.ts    what the shop claims, and what it admits it cannot claim
+lib/brand.ts      the shop's name, domain and support address. Only here.
+lib/env.ts        whether an environment variable is really set
 lib/checkout.ts   whether this shop can take money
 templates/        pages and books, as data
 fixtures/         two hard-coded orders, and the photographs they use
 app/              the shop and the chooser, /preview and the whole book,
-                  /my-forever, /api/book/print, /api/print, /api/checkout
+                  /my-forever, the four policy pages, /order/[ref], /admin,
+                  /api/book/print, /api/print, /api/checkout,
+                  /api/stripe/webhook, /api/admin/*
 test/             the suite, including the pixel assertions
 docs/             the format, the print file, the upload contract, pricing
 data/             committed evidence
@@ -173,12 +207,17 @@ No Stripe key, no Printify token, no Cloudflare credential and no account id
 belongs in it. Environment variables only, named without values in
 [`.env.example`](.env.example) and excluded by `.gitignore`.
 
-Two environment variables have a reader. `R2_PUBLIC_BASE_URL` is a public URL
-by definition. `STRIPE_SECRET_KEY` is a real secret and is read in exactly one
-place — [`lib/checkout.ts`](lib/checkout.ts) — which does nothing with its
-value but decide whether the shop is open; it is never logged, never returned
-in a response, and `test/funnel.test.tsx` asserts no key material reaches the
-rendered markup.
+`R2_PUBLIC_BASE_URL` is a public URL by definition. Everything else named in
+[`.env.example`](.env.example) is a real secret, and **no secret is ever
+logged, returned in a response or rendered.** The refusals name the
+*variables* and never a value; `test/funnel.test.tsx` asserts no key material
+reaches the markup, and the Stripe, R2 and email modules each assert their key
+does not appear in what they return.
+
+[`lib/env.ts`](lib/env.ts) decides what counts as set, and a blank row, a
+placeholder and a pasted variable name are all "unset" — those are what a
+dashboard holds after a hurried deploy, and each would otherwise read as
+configured and fail further in.
 
 ---
 
@@ -191,6 +230,10 @@ the edge. Set `R2_PUBLIC_BASE_URL` when there is a bucket; until then the
 fixture store answers, and a customer's own photographs never go near it —
 they are resized in the browser and posted with the render request.
 
-Set `STRIPE_SECRET_KEY` when there is a Stripe account. Until then the order
-button leads to a page that says payments are not switched on, which is the
-honest state and not a broken one.
+To open the shop, set all of `lib/checkout.ts`'s `REQUIRED` — the Stripe secret
+key, the webhook secret and the four R2 rows — and point a Stripe webhook
+endpoint at `/api/stripe/webhook` for `checkout.session.completed`. Set
+`ADMIN_SECRET` to reach `/admin` at all, and `RESEND_API_KEY` with
+`ORDER_EMAIL_FROM` to send the confirmation email. Until each is set the
+corresponding thing refuses and says so, which is the honest state and not a
+broken one.

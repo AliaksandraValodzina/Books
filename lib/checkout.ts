@@ -1,116 +1,141 @@
 /**
  * **Whether this shop can take money, decided in one place.**
  *
- * Stripe needs keys the captain has not supplied, and nothing secret goes in a
- * public repository — so the only honest state today is "not configured", and
- * the only thing that must never happen is a **fake success**. A customer who
- * finishes a page, presses the button and is shown anything resembling a
- * confirmation has been told a lie about a gift they are relying on.
+ * The thing that must never happen is a **fake success**. A customer who
+ * finishes a book, presses the button and is shown anything resembling a
+ * confirmation has been told a lie about a gift they are relying on. So the
+ * decision is a pure function of the environment, separated from any route,
+ * because that is the part worth testing: `test/checkout.test.ts` can ask it
+ * about every shape of environment there is without standing up a server. The
+ * route and the page read it and render; they decide nothing.
  *
- * So the decision is a pure function of the environment, separated from any
- * route, because that is the part worth testing: `test/checkout.test.ts` can
- * ask it about every shape of environment there is without standing up a
- * server. The route and the page read it and render; they decide nothing.
+ * ## It gates the whole path, not just the key
  *
- * **Presence is not enough.** A key is also "absent" when it is an empty
- * string, whitespace, or one of the placeholder strings a `.env.example` gets
- * copied into a dashboard as. Those are the realistic ways this goes wrong on a
- * first deploy, and every one of them would otherwise read as configured and
- * fail further in, where the failure looks like a crash instead of a notice.
+ * This file used to ask one question — is there a Stripe key — because there
+ * was nothing downstream of the key to ask about. There is now, and a shop
+ * with a Stripe key and nothing else is the **worse** failure: the card is
+ * charged on Stripe's page and then
+ *
+ * - with no order store, the order is written nowhere and the customer is owed
+ *   a book nobody can print; and
+ * - with no webhook secret, no event can ever be verified, so nothing can
+ *   legitimately mark the order paid and it sits looking abandoned forever.
+ *
+ * Both are money taken for a book that does not get made. So `REQUIRED` is
+ * **every variable the money path needs**, and a half-configured shop reports
+ * exactly which rows are empty and refuses — which is the same answer it has
+ * always given, for more reasons.
+ *
+ * **Presence is not enough**, and `lib/env.ts` § `isSet` is why: a blank row, a
+ * placeholder and a pasted variable name are what a dashboard actually
+ * contains after a hurried first deploy, and each one would otherwise read as
+ * configured and fail further in.
  *
  * A **test** key is reported as its own state rather than as ready. Shipping a
- * shop whose live button charges nobody is the other way to lie by accident.
+ * shop whose live button charges nobody is the other way to lie by accident —
+ * and unlike before, test mode now genuinely works end to end, which is how
+ * the captain is meant to try it.
  */
+
+import { isSet, missingFrom } from "./env";
+import { STORE_REQUIRED } from "./orders/config";
 
 export type CheckoutState =
-  /** No usable `STRIPE_SECRET_KEY`. The honest page, and a 503 from the route. */
+  /** Something the money path needs is not set. The honest page, and a 503. */
   | { kind: "unconfigured"; missing: string[] }
-  /** A test-mode key. Usable for a trial run, and never silently sold against. */
+  /** Test-mode keys. The whole path works and no real money moves. */
   | { kind: "test" }
-  /** A live key. The session is the next task; see `NOT_IMPLEMENTED`. */
+  /** Live keys. A real sale. */
   | { kind: "live" };
 
-/** Every variable the checkout needs, named so `.env.example` and this cannot drift. */
-export const REQUIRED = ["STRIPE_SECRET_KEY"] as const;
-
 /**
- * Values that are present and mean nothing.
+ * **Every variable the checkout needs**, named so `.env.example` and this
+ * cannot drift — `test/checkout.test.ts` reads the file and checks each one.
  *
- * `.env.example` carries no values, so these are what a dashboard field holds
- * when somebody has pasted a name instead of a key, or saved the row empty.
+ * `STRIPE_WEBHOOK_SECRET` is in the list because without it the payment can
+ * never be confirmed, and the order store's four are in it because without
+ * them the order cannot be written down. Neither is optional in the way a
+ * bucket for *artwork* is optional.
  */
-const PLACEHOLDERS = new Set([
-  "",
-  "-",
-  "todo",
-  "changeme",
-  "replaceme",
-  "your_key_here",
-  "sk_test_...",
-  "sk_live_...",
-  "stripe_secret_key",
-]);
+export const REQUIRED = [
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  ...STORE_REQUIRED,
+] as const;
 
-/** Is this environment value a real key rather than a blank or a placeholder? */
-export function isSet(value: string | undefined): boolean {
-  if (typeof value !== "string") return false;
-  const trimmed = value.trim();
-  if (trimmed.length < 8) return false;
-  return !PLACEHOLDERS.has(trimmed.toLowerCase());
-}
+export { isSet };
 
 export function checkoutState(env: Record<string, string | undefined>): CheckoutState {
-  const missing = REQUIRED.filter((name) => !isSet(env[name]));
-  if (missing.length) return { kind: "unconfigured", missing: [...missing] };
+  const missing = missingFrom(env, REQUIRED);
+  if (missing.length) return { kind: "unconfigured", missing };
   return env.STRIPE_SECRET_KEY!.trim().startsWith("sk_live") ? { kind: "live" } : { kind: "test" };
 }
 
 /**
- * What the customer is told when payments are not wired up.
+ * What the customer is told when the money path is not wired up.
  *
- * It says the page is kept, because it is — the draft is in their browser and
- * nothing here has touched it. That is the one reassurance this screen can give
- * that is actually true.
+ * It says the book is kept, because it is — the order is in their browser and
+ * nothing here has touched it. That is the one reassurance this screen can
+ * give that is actually true.
  */
 export const NOT_CONFIGURED = {
   heading: "Payments are not switched on yet",
   body:
     "This shop cannot take money today, so nothing has been charged and no order has been " +
-    "placed. Your page is still in this browser exactly as you left it — go back and it " +
+    "placed. Your book is still in this browser exactly as you left it — go back and it " +
     "will be there.",
   honest:
-    "The owner has to add a Stripe key before the button works. Nothing about your page is " +
-    "wrong, and you have not lost anything.",
+    "The owner has to finish setting this up before the button works. Nothing about your book " +
+    "is wrong, and you have not lost anything.",
 } as const;
 
 /**
- * What is shown when a key *is* configured.
+ * What is said when the shop *is* configured and the till still did not open.
  *
- * Still not a sale. Creating a Stripe Checkout session, holding the order and
- * handing the print file to Printify is the next task, and a screen that
- * implied otherwise would be the fake success this module exists to prevent.
- * Saying so plainly is the only state that is neither a crash nor a lie.
+ * Stripe can refuse, a bucket can be unreachable, a network can fail. This is
+ * the screen for that, and the only words that matter on it are the ones
+ * saying **nothing has been charged** — because at this point in the path
+ * nothing has: the session is created before the buyer ever sees a card field,
+ * so a failure here is always a failure before any money moved.
  */
-export const NOT_IMPLEMENTED = {
-  heading: "Checkout is configured, but not finished",
+export const NOT_TAKEN = {
+  heading: "The till did not open",
   body:
-    "A Stripe key is set, so the shop is halfway there — but the checkout session, the order " +
-    "record and the hand-off to the printer are not built yet, and this page will not pretend " +
-    "they are. Nothing has been charged.",
-  honest: "Your page is still in this browser exactly as you left it.",
+    "Something went wrong between this page and the payment provider, so nothing has been " +
+    "charged and no order has been placed. Trying again is safe.",
+  honest: "Your book is still in this browser exactly as you left it.",
 } as const;
 
-export function copyFor(state: CheckoutState): typeof NOT_CONFIGURED | typeof NOT_IMPLEMENTED {
-  return state.kind === "unconfigured" ? NOT_CONFIGURED : NOT_IMPLEMENTED;
+export function copyFor(state: CheckoutState): typeof NOT_CONFIGURED | typeof NOT_TAKEN {
+  return state.kind === "unconfigured" ? NOT_CONFIGURED : NOT_TAKEN;
 }
 
 /**
- * The HTTP status the route answers with.
+ * The HTTP status a **refusal** answers with.
  *
- * 503 rather than 500: the shop is not broken, it is not open. And never 200 —
- * a success status is the machine-readable half of a fake success, and
- * something will eventually read it.
+ * 503 rather than 500 when the shop is closed: it is not broken, it is not
+ * open. 502 when it is open and the provider would not play, because the
+ * failure is genuinely upstream. And never 200 — a success status is the
+ * machine-readable half of a fake success, and something will eventually read
+ * it.
  */
 export function statusFor(state: CheckoutState): number {
-  return state.kind === "unconfigured" ? 503 : 501;
+  return state.kind === "unconfigured" ? 503 : 502;
+}
+
+/**
+ * **Where Stripe sends the buyer back to.**
+ *
+ * Stripe needs absolute URLs, and the origin of the request is the right
+ * answer on Vercel — it is the host the buyer actually typed, so a preview
+ * deployment returns to itself rather than to production.
+ * `PUBLIC_BASE_URL` overrides it for the one case where the request's own
+ * origin is wrong: a proxy in front, or a webhook-triggered email that has no
+ * request to read an origin from.
+ */
+export function baseUrl(env: Record<string, string | undefined>, request?: Request): string {
+  const declared = env.PUBLIC_BASE_URL?.trim().replace(/\/+$/, "");
+  if (declared && isSet(declared)) return declared;
+  if (request) return new URL(request.url).origin;
+  return "";
 }

@@ -255,6 +255,7 @@ describe("confirm the spelling, which is where typos die", () => {
         face={FACES[nameSlotFont(book)]?.family}
         edition={edition}
         onBack={() => {}}
+        onConfirm={() => {}}
       />,
     );
 
@@ -268,14 +269,21 @@ describe("confirm the spelling, which is where typos die", () => {
     expect(out).toContain(FACES[nameSlotFont(book)].family);
   });
 
-  it("makes them click past it, into the till that already exists", () => {
+  it("makes them click past it, with one button and a way back", () => {
     const out = markup("Rosalind");
-    expect(out).toContain('action="/api/checkout"');
-    expect(out).toContain('method="post"');
     expect(testIds(out)).toContain("confirm-yes");
     // And a way back, so this is a check and not a trap.
     expect(testIds(out)).toContain("confirm-back");
     expect(out).toContain("Let me change it");
+  });
+
+  it("has exactly one way on, so an order cannot be sent from two places", () => {
+    // `./Bar.tsx` owns the request now. Two submit buttons for one order is
+    // two places for the order to be sent from, which is the thing the single
+    // `onConfirm` is here to prevent.
+    const out = markup("Rosalind");
+    expect(out.match(/data-testid="confirm-yes"/g)?.length).toBe(1);
+    expect(out).not.toContain("<form");
   });
 
   it("never reads as a confirmation of an order", () => {
@@ -283,6 +291,8 @@ describe("confirm the spelling, which is where typos die", () => {
     for (const word of ["thank you", "order confirmed", "payment received", "we have received"]) {
       expect(out, word).not.toContain(word);
     }
-    expect(out).toContain("nothing is charged");
+    // It says where the card is typed, which is the honest thing this screen
+    // can say about money: not here.
+    expect(out).toContain("never sees it");
   });
 });

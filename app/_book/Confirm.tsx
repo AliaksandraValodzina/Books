@@ -33,9 +33,14 @@
  * letterforms on the cover. Showing it in the page's UI font would be showing
  * them a different thing and asking them to approve this one.
  *
- * It is the only `POST` to the till in the flow, which is why the form lives
- * here rather than in the bar: two submit buttons for one order is two places
- * for the order to be sent from.
+ * **The button is here and the request is not.** It takes `onConfirm` rather
+ * than owning a `fetch`, because sending the order means reading the fill, the
+ * edition and the photograph's bytes out of `useBook()` — and a component that
+ * reached into context could only ever be rendered with an empty order in this
+ * suite, since `BookProvider` loads from `localStorage` in an effect and
+ * effects do not run in a server render. `./Bar.tsx` makes the request; this
+ * screen stays the one assertion that matters, *the name the buyer typed is
+ * what is shown*, and stays testable.
  */
 
 import { priceOf, type Edition } from "../../lib/book/editions";
@@ -57,6 +62,9 @@ export default function Confirm({
   face,
   edition,
   onBack,
+  onConfirm,
+  busy = false,
+  problem = null,
 }: {
   /** The name exactly as it will print — `BookFill.name`, never the raw field. */
   name: string;
@@ -64,6 +72,19 @@ export default function Confirm({
   face?: string;
   edition: Edition;
   onBack: () => void;
+  /** Send the order to the till. `./Bar.tsx` owns the request. */
+  onConfirm: () => void;
+  /** True while the till is being opened, so the button cannot be pressed twice. */
+  busy?: boolean;
+  /**
+   * What went wrong, in the buyer's words.
+   *
+   * Shown here rather than navigated to, because a buyer whose card never got
+   * asked for has lost nothing and should not lose their place either. The
+   * refusals that are *about the shop* rather than about this order send them
+   * to `/checkout`, which is the page that explains those — see `./Bar.tsx`.
+   */
+  problem?: string | null;
 }) {
   return (
     <div data-testid="confirm" role="group" aria-labelledby="confirm-heading">
@@ -92,32 +113,42 @@ export default function Confirm({
 
       <div className="mt-3 flex flex-col gap-2 sm:flex-row-reverse">
         {/*
-          A real form `POST` to the checkout that already exists, which reads
-          the environment, finds no Stripe key and says so plainly. Never a
-          crash, and never a fake success.
+          The one way on. It posts the order to `/api/checkout`, which writes
+          the order down and opens a hosted Stripe Checkout Session — or, with
+          the shop not configured, refuses and says plainly that nothing has
+          been charged. Never a crash, and never a fake success.
         */}
-        <form method="post" action="/api/checkout" className="sm:flex-1">
-          <button
-            type="submit"
-            data-testid="confirm-yes"
-            className="w-full rounded-xl bg-[#B22741] px-5 py-3.5 text-lg font-semibold text-white shadow-lg"
-          >
-            Yes — that is right
-          </button>
-        </form>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={busy}
+          data-testid="confirm-yes"
+          className="w-full rounded-xl bg-[#B22741] px-5 py-3.5 text-lg font-semibold text-white shadow-lg disabled:opacity-60 sm:flex-1"
+        >
+          {busy ? "Opening the till…" : "Yes — that is right"}
+        </button>
         <button
           type="button"
           onClick={onBack}
+          disabled={busy}
           data-testid="confirm-back"
-          className="rounded-xl border-2 border-current/25 px-5 py-3.5 font-medium sm:flex-1"
+          className="rounded-xl border-2 border-current/25 px-5 py-3.5 font-medium disabled:opacity-60 sm:flex-1"
         >
           Let me change it
         </button>
       </div>
 
       <p className="mt-1.5 text-center text-[0.78rem] opacity-70" role="status">
-        {edition.label}, {priceOf(edition.price)}. Payments are not switched on yet — the next
-        screen says so plainly, and nothing is charged.
+        {problem ? (
+          <span data-testid="confirm-problem" className="font-medium text-[#8e1c33]">
+            {problem}
+          </span>
+        ) : (
+          <>
+            {edition.label}, {priceOf(edition.price)}. The card is typed on Stripe&rsquo;s own
+            page — this site never sees it.
+          </>
+        )}
       </p>
     </div>
   );
