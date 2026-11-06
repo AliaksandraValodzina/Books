@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
+import { BRAND } from "../lib/brand";
 import { fontFaceCss } from "../lib/render/fonts";
 import "./globals.css";
 
 /**
  * The default for any page that does not set its own.
  *
- * It names the shop rather than a title, because as of 6 November
- * books.keepnook.app sells the baby book and "My Forever" is the technical
- * spine behind it at `/my-forever`, which sets its own.
+ * It names the shop rather than a title, because the shop sells the baby book
+ * and "My Forever" is the technical spine behind it at `/my-forever`, which
+ * sets its own. The name comes from `lib/brand.ts` and is written nowhere
+ * else — the shop has already been renamed once.
  */
 export const metadata: Metadata = {
-  title: "Books — personalised printed books",
+  title: `${BRAND.name} — personalised printed books`,
   description: "Personalised printed books, rendered from a template that is data.",
 };
 

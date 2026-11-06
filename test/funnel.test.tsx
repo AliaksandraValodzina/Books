@@ -29,6 +29,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import Home from "../app/my-forever/page";
 import Checkout from "../app/checkout/page";
+import { REQUIRED } from "../lib/checkout";
 import { DELIVERY, PLACEHOLDER, UNCONFIRMED, WHAT_YOU_GET } from "../lib/product";
 import { MY_FOREVER } from "../templates/my-forever";
 import type { PhotoSlotLayer, TextSlotLayer } from "../lib/template/types";
@@ -42,16 +43,37 @@ async function homeMarkup(guides = false) {
   return markupOf(Home({ searchParams: Promise.resolve(guides ? { guides: "1" } : {}) }));
 }
 
+/**
+ * The checkout page rendered against a given environment.
+ *
+ * Every variable in `REQUIRED` is set or cleared, not only the Stripe key:
+ * `lib/checkout.ts` gates the whole money path now, so a helper that moved one
+ * row would be testing the unconfigured case twice and calling it two cases.
+ */
 async function checkoutMarkup(env: Record<string, string | undefined>) {
-  const before = process.env.STRIPE_SECRET_KEY;
+  const before = new Map<string, string | undefined>();
+  for (const name of REQUIRED) before.set(name, process.env[name]);
   try {
-    if (env.STRIPE_SECRET_KEY === undefined) delete process.env.STRIPE_SECRET_KEY;
-    else process.env.STRIPE_SECRET_KEY = env.STRIPE_SECRET_KEY;
+    for (const name of REQUIRED) {
+      const next = env[name];
+      if (next === undefined) delete process.env[name];
+      else process.env[name] = next;
+    }
     return await markupOf(Checkout());
   } finally {
-    if (before === undefined) delete process.env.STRIPE_SECRET_KEY;
-    else process.env.STRIPE_SECRET_KEY = before;
+    for (const [name, value] of before) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
   }
+}
+
+/** Every row filled with something plausible, and the key given. */
+function fullEnv(key: string): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const name of REQUIRED) env[name] = `value-for-${name.toLowerCase()}`;
+  env.STRIPE_SECRET_KEY = key;
+  return env;
 }
 
 describe("the page renders at all", () => {
@@ -185,15 +207,23 @@ describe("the checkout page", () => {
     expect(html).toContain("STRIPE_SECRET_KEY");
   });
 
-  it("is still honest when a key IS configured, because the rest is not built", async () => {
-    const html = await checkoutMarkup({ STRIPE_SECRET_KEY: "sk_test_" + "x".repeat(24) });
-    expect(html).toContain("not finished");
-    expect(html).toContain("Nothing has been charged");
+  it("is still honest when everything IS configured, because arriving here is a failure", async () => {
+    // A buyer only reaches this page when something stopped them getting to
+    // Stripe. With the shop configured that is an upstream failure, and the
+    // only words that matter are the ones saying no money moved.
+    const html = await checkoutMarkup(fullEnv("sk_test_" + "x".repeat(24)));
+    expect(html).toContain("The till did not open");
+    expect(html).toContain("nothing has been charged");
   });
 
   it("never shows anything a customer could read as a confirmation", async () => {
-    for (const key of [undefined, "sk_test_" + "x".repeat(24), "sk_live_" + "y".repeat(24)]) {
-      const html = (await checkoutMarkup({ STRIPE_SECRET_KEY: key })).toLowerCase();
+    for (const env of [
+      {},
+      { STRIPE_SECRET_KEY: "sk_test_" + "x".repeat(24) },
+      fullEnv("sk_test_" + "x".repeat(24)),
+      fullEnv("sk_live_" + "y".repeat(24)),
+    ]) {
+      const html = (await checkoutMarkup(env)).toLowerCase();
       for (const lie of [
         "thank you for your order",
         "order confirmed",
@@ -201,7 +231,7 @@ describe("the checkout page", () => {
         "your order is on its way",
         "successfully",
       ]) {
-        expect(html, `"${lie}" with key=${key}`).not.toContain(lie);
+        expect(html, `"${lie}" with ${JSON.stringify(Object.keys(env))}`).not.toContain(lie);
       }
     }
   });

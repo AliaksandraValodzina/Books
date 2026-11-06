@@ -36,6 +36,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { BRAND } from "../brand";
 import { canonicalJson } from "../template/rev";
 import { blockingProblems, type Problem } from "../template/validate";
 import { renderPrintPixels, renderPrintPng, type PrintResult, type SuppliedBytes } from "../render/raster";
@@ -174,7 +175,9 @@ export async function renderBookPdf(
     pdf: buildPdf(pages, {
       mediaBox: { width: book.page.canvas.width, height: book.page.canvas.height },
       title: filename.replace(/\.pdf$/, ""),
-      creator: "books.keepnook.app",
+      // `lib/brand.ts`, not a literal: this string is inside every print file
+      // ever made, which is the worst possible place to leave an old shop name.
+      creator: BRAND.domain,
     }),
     pages: indices,
     filename,
