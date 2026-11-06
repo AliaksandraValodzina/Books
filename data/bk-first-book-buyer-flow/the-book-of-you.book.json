@@ -1,0 +1,902 @@
+{
+  "schema": 1,
+  "id": "the-book-of-you",
+  "rev": "169f8740",
+  "name": "The Book of You",
+  "blurb": "Twelve spreads of a day in their life, with their name through it, one of your own photographs, and a dedication in the front.",
+  "page": {
+    "canvas": {
+      "unit": "pt",
+      "width": 612,
+      "height": 612,
+      "bleed": 18,
+      "safe": 18,
+      "background": "#F3E7DA"
+    },
+    "print": {
+      "pixels": {
+        "width": 3600,
+        "height": 3600
+      },
+      "colourSpace": "srgb",
+      "encoding": "png"
+    },
+    "minPhotoDpi": 200
+  },
+  "genders": [
+    {
+      "id": "girl",
+      "label": "A girl"
+    },
+    {
+      "id": "boy",
+      "label": "A boy"
+    }
+  ],
+  "looks": [
+    {
+      "id": "mabel",
+      "label": "Mabel",
+      "gender": "girl",
+      "baby": {
+        "skin": "#F2CBA8",
+        "hair": "#6B4A33",
+        "cloth": "#E8A0A8",
+        "seed": 31
+      }
+    },
+    {
+      "id": "ada",
+      "label": "Ada",
+      "gender": "girl",
+      "baby": {
+        "skin": "#8C5A3C",
+        "hair": "#2B1C14",
+        "cloth": "#E7C7E0",
+        "seed": 34
+      }
+    },
+    {
+      "id": "iris",
+      "label": "Iris",
+      "gender": "girl",
+      "baby": {
+        "skin": "#E8B48C",
+        "hair": "#8C6239",
+        "cloth": "#F0C8D2",
+        "seed": 35
+      }
+    },
+    {
+      "id": "nell",
+      "label": "Nell",
+      "gender": "girl",
+      "baby": {
+        "skin": "#6E4228",
+        "hair": "#1C110A",
+        "cloth": "#D8C2E8",
+        "seed": 36
+      }
+    },
+    {
+      "id": "clover",
+      "label": "Clover",
+      "gender": "girl",
+      "baby": {
+        "skin": "#FBE3C8",
+        "hair": "#C98A3C",
+        "cloth": "#E8C0A8",
+        "seed": 37
+      }
+    },
+    {
+      "id": "juno",
+      "label": "Juno",
+      "gender": "girl",
+      "baby": {
+        "skin": "#B5764C",
+        "hair": "#4A2C18",
+        "cloth": "#EFB4C0",
+        "seed": 38
+      }
+    },
+    {
+      "id": "wren",
+      "label": "Wren",
+      "gender": "boy",
+      "baby": {
+        "skin": "#C98A5E",
+        "hair": "#3A2418",
+        "cloth": "#9AC6C0",
+        "seed": 32
+      }
+    },
+    {
+      "id": "otis",
+      "label": "Otis",
+      "gender": "boy",
+      "baby": {
+        "skin": "#F6DCC0",
+        "hair": "#D9A24B",
+        "cloth": "#A8C4E8",
+        "seed": 33
+      }
+    },
+    {
+      "id": "albie",
+      "label": "Albie",
+      "gender": "boy",
+      "baby": {
+        "skin": "#E0A77C",
+        "hair": "#5C3A22",
+        "cloth": "#A8C8A0",
+        "seed": 39
+      }
+    },
+    {
+      "id": "rufus",
+      "label": "Rufus",
+      "gender": "boy",
+      "baby": {
+        "skin": "#7A4A2C",
+        "hair": "#20140C",
+        "cloth": "#9CB8D8",
+        "seed": 40
+      }
+    },
+    {
+      "id": "milo",
+      "label": "Milo",
+      "gender": "boy",
+      "baby": {
+        "skin": "#FBE8D4",
+        "hair": "#2E1E14",
+        "cloth": "#C8C0E0",
+        "seed": 41
+      }
+    },
+    {
+      "id": "bear",
+      "label": "Bear",
+      "gender": "boy",
+      "baby": {
+        "skin": "#D39A6E",
+        "hair": "#6B4420",
+        "cloth": "#B8CCB0",
+        "seed": 42
+      }
+    }
+  ],
+  "tilePage": "page-004",
+  "covers": [
+    {
+      "id": "blush",
+      "label": "Blush",
+      "colour": "#E8A0A8"
+    },
+    {
+      "id": "sage",
+      "label": "Sage",
+      "colour": "#A9C2A0"
+    },
+    {
+      "id": "oat",
+      "label": "Oat",
+      "colour": "#E3CDB8"
+    }
+  ],
+  "cover": {
+    "id": "cover",
+    "art": {
+      "kind": "drawn",
+      "scene": {
+        "ground": "#E8A0A8",
+        "groundFromCover": true,
+        "floor": "#D9BFA6",
+        "prop": "#CBAE87",
+        "babyAt": {
+          "x": 0.5,
+          "y": 0.84
+        },
+        "babySize": 0.24,
+        "seed": 1001
+      }
+    },
+    "layers": [
+      {
+        "id": "cover-panel",
+        "kind": "shape",
+        "frame": {
+          "x": 85,
+          "y": 212,
+          "width": 442,
+          "height": 188
+        },
+        "shape": {
+          "kind": "rect",
+          "radius": 20,
+          "fill": "#FBF6EC",
+          "stroke": {
+            "colour": "#FFFFFF",
+            "width": 4
+          },
+          "shadow": {
+            "colour": "#2A1C12",
+            "blur": 10,
+            "dx": 0,
+            "dy": 6
+          }
+        }
+      },
+      {
+        "id": "cover-name",
+        "kind": "textSlot",
+        "slot": "babyName",
+        "frame": {
+          "x": 106,
+          "y": 255,
+          "width": 400,
+          "height": 106
+        },
+        "font": "hand",
+        "size": 62,
+        "baseline": 74.39999999999999,
+        "colour": "#3B2A20",
+        "align": "middle",
+        "maxChars": 14
+      }
+    ]
+  },
+  "pages": [
+    {
+      "id": "page-001",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#F3E7DA",
+          "floor": "#E3CDB8",
+          "prop": "#D9BFA6",
+          "seed": 2000,
+          "babyless": true
+        }
+      },
+      "layers": [
+        {
+          "id": "title-name",
+          "kind": "textSlot",
+          "slot": "babyName",
+          "frame": {
+            "x": 110,
+            "y": 142,
+            "width": 392,
+            "height": 99
+          },
+          "font": "hand",
+          "size": 60,
+          "baseline": 72,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 14
+        }
+      ]
+    },
+    {
+      "id": "page-002",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#F3E7DA",
+          "floor": "#E3CDB8",
+          "prop": "#D9BFA6",
+          "seed": 2001,
+          "babyless": true
+        }
+      },
+      "layers": [
+        {
+          "id": "photo",
+          "kind": "photoSlot",
+          "slot": "photo",
+          "frame": {
+            "x": 198,
+            "y": 48,
+            "width": 216,
+            "height": 216
+          },
+          "mask": {
+            "kind": "rect",
+            "radius": 10
+          },
+          "stroke": {
+            "colour": "#FFFFFF",
+            "width": 6
+          },
+          "placeholder": {
+            "fill": "#FFFFFF"
+          },
+          "prompt": "A photograph of them"
+        },
+        {
+          "id": "dedication",
+          "kind": "textSlot",
+          "slot": "dedication",
+          "frame": {
+            "x": 119,
+            "y": 288,
+            "width": 374,
+            "height": 230
+          },
+          "font": "typewriter",
+          "size": 15,
+          "baseline": 19,
+          "lineHeight": 23,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 300,
+          "maxLines": 10,
+          "maxCharsPerLine": 34
+        },
+        {
+          "id": "from",
+          "kind": "textSlot",
+          "slot": "fromLine",
+          "frame": {
+            "x": 119,
+            "y": 530,
+            "width": 374,
+            "height": 32
+          },
+          "font": "hand",
+          "size": 20,
+          "baseline": 24,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 28,
+          "maxLines": 1,
+          "maxCharsPerLine": 28
+        }
+      ]
+    },
+    {
+      "id": "page-003",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#E6F0F2",
+          "floor": "#BFD9E0",
+          "prop": "#A9C9D4",
+          "seed": 2002
+        }
+      },
+      "story": "{name}\nwoke up when the light came in.",
+      "layers": [
+        {
+          "id": "story",
+          "kind": "textSlot",
+          "slot": "storyText",
+          "frame": {
+            "x": 68,
+            "y": 71,
+            "width": 476,
+            "height": 135
+          },
+          "font": "typewriter",
+          "size": 17,
+          "baseline": 23,
+          "lineHeight": 33,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 130,
+          "maxLines": 3,
+          "maxCharsPerLine": 42
+        }
+      ]
+    },
+    {
+      "id": "page-004",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#E6F0F2",
+          "floor": "#BFD9E0",
+          "prop": "#A9C9D4",
+          "seed": 2003
+        }
+      }
+    },
+    {
+      "id": "page-005",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#EAF1E2",
+          "floor": "#CBDCB8",
+          "prop": "#B3CE9E",
+          "seed": 2004
+        }
+      },
+      "story": "There was a whole day waiting,\nand none of it had happened yet.",
+      "layers": [
+        {
+          "id": "story",
+          "kind": "textSlot",
+          "slot": "storyText",
+          "frame": {
+            "x": 68,
+            "y": 71,
+            "width": 476,
+            "height": 135
+          },
+          "font": "typewriter",
+          "size": 17,
+          "baseline": 23,
+          "lineHeight": 33,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 130,
+          "maxLines": 3,
+          "maxCharsPerLine": 42
+        }
+      ]
+    },
+    {
+      "id": "page-006",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#EAF1E2",
+          "floor": "#CBDCB8",
+          "prop": "#B3CE9E",
+          "seed": 2005
+        }
+      }
+    },
+    {
+      "id": "page-007",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#F6EDDC",
+          "floor": "#E0CBA8",
+          "prop": "#CBAE87",
+          "seed": 2006
+        }
+      },
+      "story": "Breakfast went mostly in,\nand a little on the floor.",
+      "layers": [
+        {
+          "id": "story",
+          "kind": "textSlot",
+          "slot": "storyText",
+          "frame": {
+            "x": 68,
+            "y": 71,
+            "width": 476,
+            "height": 135
+          },
+          "font": "typewriter",
+          "size": 17,
+          "baseline": 23,
+          "lineHeight": 33,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 130,
+          "maxLines": 3,
+          "maxCharsPerLine": 42
+        }
+      ]
+    },
+    {
+      "id": "page-008",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#F6EDDC",
+          "floor": "#E0CBA8",
+          "prop": "#CBAE87",
+          "seed": 2007
+        }
+      }
+    },
+    {
+      "id": "page-009",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#E6E4F0",
+          "floor": "#C6C2DF",
+          "prop": "#B0AACF",
+          "seed": 2008
+        }
+      },
+      "story": "{name}\nfound a cupboard that opens.",
+      "layers": [
+        {
+          "id": "story",
+          "kind": "textSlot",
+          "slot": "storyText",
+          "frame": {
+            "x": 68,
+            "y": 71,
+            "width": 476,
+            "height": 135
+          },
+          "font": "typewriter",
+          "size": 17,
+          "baseline": 23,
+          "lineHeight": 33,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 130,
+          "maxLines": 3,
+          "maxCharsPerLine": 42
+        }
+      ]
+    },
+    {
+      "id": "page-010",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#E6E4F0",
+          "floor": "#C6C2DF",
+          "prop": "#B0AACF",
+          "seed": 2009
+        }
+      }
+    },
+    {
+      "id": "page-011",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#EFF3E6",
+          "floor": "#CFE0C0",
+          "prop": "#F0C8A0",
+          "seed": 2010
+        }
+      },
+      "story": "Outside, everything was bigger\nand much more interesting.",
+      "layers": [
+        {
+          "id": "story",
+          "kind": "textSlot",
+          "slot": "storyText",
+          "frame": {
+            "x": 68,
+            "y": 71,
+            "width": 476,
+            "height": 135
+          },
+          "font": "typewriter",
+          "size": 17,
+          "baseline": 23,
+          "lineHeight": 33,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 130,
+          "maxLines": 3,
+          "maxCharsPerLine": 42
+        }
+      ]
+    },
+    {
+      "id": "page-012",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#EFF3E6",
+          "floor": "#CFE0C0",
+          "prop": "#F0C8A0",
+          "seed": 2011
+        }
+      }
+    },
+    {
+      "id": "page-013",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#FBEFE6",
+          "floor": "#EED2BE",
+          "prop": "#DDB79C",
+          "seed": 2012
+        }
+      },
+      "story": "A duck looked back.\nNeither of them said anything.",
+      "layers": [
+        {
+          "id": "story",
+          "kind": "textSlot",
+          "slot": "storyText",
+          "frame": {
+            "x": 68,
+            "y": 71,
+            "width": 476,
+            "height": 135
+          },
+          "font": "typewriter",
+          "size": 17,
+          "baseline": 23,
+          "lineHeight": 33,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 130,
+          "maxLines": 3,
+          "maxCharsPerLine": 42
+        }
+      ]
+    },
+    {
+      "id": "page-014",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#FBEFE6",
+          "floor": "#EED2BE",
+          "prop": "#DDB79C",
+          "seed": 2013
+        }
+      }
+    },
+    {
+      "id": "page-015",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#FDF3E3",
+          "floor": "#F0D9B5",
+          "prop": "#E8B9A0",
+          "seed": 2014
+        }
+      },
+      "story": "{name}\nwas carried home half asleep.",
+      "layers": [
+        {
+          "id": "story",
+          "kind": "textSlot",
+          "slot": "storyText",
+          "frame": {
+            "x": 68,
+            "y": 71,
+            "width": 476,
+            "height": 135
+          },
+          "font": "typewriter",
+          "size": 17,
+          "baseline": 23,
+          "lineHeight": 33,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 130,
+          "maxLines": 3,
+          "maxCharsPerLine": 42
+        }
+      ]
+    },
+    {
+      "id": "page-016",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#FDF3E3",
+          "floor": "#F0D9B5",
+          "prop": "#E8B9A0",
+          "seed": 2015
+        }
+      }
+    },
+    {
+      "id": "page-017",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#F3E7DA",
+          "floor": "#E3CDB8",
+          "prop": "#D9BFA6",
+          "seed": 2016
+        }
+      },
+      "story": "The bath was warm\nand the flannel was a boat.",
+      "layers": [
+        {
+          "id": "story",
+          "kind": "textSlot",
+          "slot": "storyText",
+          "frame": {
+            "x": 68,
+            "y": 71,
+            "width": 476,
+            "height": 135
+          },
+          "font": "typewriter",
+          "size": 17,
+          "baseline": 23,
+          "lineHeight": 33,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 130,
+          "maxLines": 3,
+          "maxCharsPerLine": 42
+        }
+      ]
+    },
+    {
+      "id": "page-018",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#F3E7DA",
+          "floor": "#E3CDB8",
+          "prop": "#D9BFA6",
+          "seed": 2017
+        }
+      }
+    },
+    {
+      "id": "page-019",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#E6F0F2",
+          "floor": "#BFD9E0",
+          "prop": "#A9C9D4",
+          "seed": 2018
+        }
+      },
+      "story": "Everything got slower\nand quieter and softer.",
+      "layers": [
+        {
+          "id": "story",
+          "kind": "textSlot",
+          "slot": "storyText",
+          "frame": {
+            "x": 68,
+            "y": 71,
+            "width": 476,
+            "height": 135
+          },
+          "font": "typewriter",
+          "size": 17,
+          "baseline": 23,
+          "lineHeight": 33,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 130,
+          "maxLines": 3,
+          "maxCharsPerLine": 42
+        }
+      ]
+    },
+    {
+      "id": "page-020",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#E6F0F2",
+          "floor": "#BFD9E0",
+          "prop": "#A9C9D4",
+          "seed": 2019
+        }
+      }
+    },
+    {
+      "id": "page-021",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#EAF1E2",
+          "floor": "#CBDCB8",
+          "prop": "#B3CE9E",
+          "seed": 2020
+        }
+      },
+      "story": "{name}\nwas tucked in with the rabbit.",
+      "layers": [
+        {
+          "id": "story",
+          "kind": "textSlot",
+          "slot": "storyText",
+          "frame": {
+            "x": 68,
+            "y": 71,
+            "width": 476,
+            "height": 135
+          },
+          "font": "typewriter",
+          "size": 17,
+          "baseline": 23,
+          "lineHeight": 33,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 130,
+          "maxLines": 3,
+          "maxCharsPerLine": 42
+        }
+      ]
+    },
+    {
+      "id": "page-022",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#EAF1E2",
+          "floor": "#CBDCB8",
+          "prop": "#B3CE9E",
+          "seed": 2021
+        }
+      }
+    },
+    {
+      "id": "page-023",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#F6EDDC",
+          "floor": "#E0CBA8",
+          "prop": "#CBAE87",
+          "seed": 2022
+        }
+      },
+      "story": "Goodnight to the day,\nand to everyone in it.",
+      "layers": [
+        {
+          "id": "story",
+          "kind": "textSlot",
+          "slot": "storyText",
+          "frame": {
+            "x": 68,
+            "y": 71,
+            "width": 476,
+            "height": 135
+          },
+          "font": "typewriter",
+          "size": 17,
+          "baseline": 23,
+          "lineHeight": 33,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 130,
+          "maxLines": 3,
+          "maxCharsPerLine": 42
+        }
+      ]
+    },
+    {
+      "id": "page-024",
+      "art": {
+        "kind": "drawn",
+        "scene": {
+          "ground": "#F6EDDC",
+          "floor": "#E0CBA8",
+          "prop": "#CBAE87",
+          "seed": 2023,
+          "babyAt": {
+            "x": 0.5,
+            "y": 0.78
+          },
+          "babySize": 0.28
+        }
+      },
+      "layers": [
+        {
+          "id": "closing-name",
+          "kind": "textSlot",
+          "slot": "babyName",
+          "frame": {
+            "x": 110,
+            "y": 106,
+            "width": 392,
+            "height": 99
+          },
+          "font": "hand",
+          "size": 60,
+          "baseline": 72,
+          "colour": "#3B2A20",
+          "align": "middle",
+          "maxChars": 14
+        }
+      ]
+    }
+  ]
+}

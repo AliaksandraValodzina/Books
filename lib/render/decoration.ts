@@ -230,6 +230,148 @@ function kiss(id: string, b: Box, a: Extract<Art, { kind: "kiss" }>): Fragment {
 }
 
 // ---------------------------------------------------------------------------
+// The nursery scene — a stand-in for the captain's artwork
+// ---------------------------------------------------------------------------
+
+/**
+ * The ink of a face.
+ *
+ * A literal rather than a declared colour, and the only one in this module.
+ * Eyes and a mouth are near-black at any skin tone and in any scene, so making
+ * them a field would be three more numbers on every page for a decision nobody
+ * would ever vary. If a look ever needs to, it becomes a field on `BabySpec`
+ * and this becomes its default — which is the shape every other optional field
+ * in the format already has.
+ */
+const FACE_INK = "#3f2b22";
+
+/**
+ * A full-bleed scene with a baby in it.
+ *
+ * **It is a placeholder and it is built to be an honest one.** The production
+ * state of a book page is a finished image the captain uploaded
+ * (`lib/book/types.ts` § `PageArt`); this exists so the chooser, the whole-book
+ * preview and a real 3600 px print file all work, are deployed and are tested
+ * before any artwork exists. Nothing here is trying to be watercolour.
+ *
+ * Two constraints shaped how it is drawn rather than how it looks:
+ *
+ * **No filters.** A Gaussian blur at 3600 px costs more than everything else on
+ * the page put together, and the preview draws twenty-five of these in a browser
+ * on every keystroke. Every soft edge here is a radial gradient, which is a
+ * sampled fill rather than a convolution.
+ *
+ * **The baby is the only thing the look contributes.** `skin`, `hair` and
+ * `cloth` come from the chosen `Look`; the ground, the floor and the prop come
+ * from the page. That is the upload contract's hardest rule — *"only the baby
+ * differs"* — expressed as which object a field is read off, so two looks of one
+ * book cannot have different kitchens even by accident.
+ */
+function scene(id: string, b: Box, a: Extract<Art, { kind: "scene" }>): Fragment {
+  const where = a.babyAt ?? { x: 0.5, y: 0.6 };
+  const size = Math.min(Math.max(a.babySize ?? 0.34, 0.05), 0.9);
+  const rand = mulberry32(a.seed);
+  // Fractions of the frame, as plain numbers — `at` rounds for output, and
+  // these are arithmetic that has to happen before rounding.
+  const fx = (f: number) => b.x + b.width * f;
+  const fy = (f: number) => b.y + b.height * f;
+
+  // The wash: a lighter middle falling off to the declared ground, plus two
+  // seeded pools of the floor colour. Flat vector colour across a whole page is
+  // the single thing that most reads as "not painted".
+  const defs: string[] = [
+    `<radialGradient id="${id}-wash" cx="0.5" cy="0.42" r="0.78">` +
+      `<stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>` +
+      `<stop offset="0.6" stop-color="#ffffff" stop-opacity="0.06"/>` +
+      `<stop offset="1" stop-color="${a.ground}" stop-opacity="0"/>` +
+      `</radialGradient>`,
+    `<radialGradient id="${id}-pool" cx="0.5" cy="0.5" r="0.5">` +
+      `<stop offset="0" stop-color="${a.floor}" stop-opacity="0.3"/>` +
+      `<stop offset="1" stop-color="${a.floor}" stop-opacity="0"/>` +
+      `</radialGradient>`,
+    // The vignette is what stops a full-bleed page reading as a screenshot of a
+    // colour. Deliberately slight: anything stronger prints as a frame.
+    `<radialGradient id="${id}-edge" cx="0.5" cy="0.5" r="0.72">` +
+      `<stop offset="0.62" stop-color="#2a1c12" stop-opacity="0"/>` +
+      `<stop offset="1" stop-color="#2a1c12" stop-opacity="0.16"/>` +
+      `</radialGradient>`,
+  ];
+
+  const whole = `x="${r(b.x)}" y="${r(b.y)}" width="${r(b.width)}" height="${r(b.height)}"`;
+  const body: string[] = [
+    `<rect ${whole} fill="${a.ground}"/>`,
+    `<rect ${whole} fill="url(#${id}-wash)"/>`,
+  ];
+
+  for (let i = 0; i < 2; i++) {
+    const cx = fx(0.15 + rand() * 0.7);
+    const cy = fy(0.18 + rand() * 0.5);
+    const rx = b.width * (0.18 + rand() * 0.16);
+    body.push(
+      `<ellipse cx="${r(cx)}" cy="${r(cy)}" rx="${r(rx)}" ry="${r(rx * 0.72)}" fill="url(#${id}-pool)"/>`,
+    );
+  }
+
+  // The floor: a band across the bottom with a slack top edge, drawn past both
+  // side edges and past the bottom so the bleed is covered whatever the trim
+  // does. `docs/look-upload-contract.md` § 2 is the rule being obeyed.
+  const top = 0.62 + (rand() - 0.5) * 0.06;
+  body.push(
+    `<path d="M ${r(fx(-0.02))} ${r(fy(top))} ` +
+      `C ${r(fx(0.3))} ${r(fy(top - 0.035))} ${r(fx(0.7))} ${r(fy(top + 0.03))} ` +
+      `${r(fx(1.02))} ${r(fy(top - 0.01))} ` +
+      `L ${r(fx(1.02))} ${r(fy(1.02))} L ${r(fx(-0.02))} ${r(fy(1.02))} Z" fill="${a.floor}"/>`,
+  );
+
+  // A **babyless** page stops here, with the ground and the floor drawn and
+  // nothing on them — not even the prop, which is furniture for a figure that
+  // is not coming. That is the opening spread of the book: the one spread
+  // identical across every look, and therefore the one that can carry the
+  // buyer's own photograph and words.
+  if (a.babyless) {
+    body.push(`<rect ${whole} fill="url(#${id}-edge)"/>`);
+    return { defs: defs.join(""), body: body.join("") };
+  }
+
+  // The prop the baby is in or on: centred under them, wider than they are.
+  body.push(
+    `<ellipse cx="${r(fx(where.x))}" cy="${r(fy(where.y + size * 0.3))}" ` +
+      `rx="${r(b.width * size * 0.78)}" ry="${r(b.height * size * 0.3)}" fill="${a.prop}"/>`,
+  );
+
+  // The baby: a swaddled bundle, a head, a cap of hair and a face. The least
+  // that reads as a baby and varies visibly between two looks.
+  const h = b.height * size;
+  const bx = fx(where.x);
+  const by = fy(where.y);
+  const hr = h * 0.3;
+  const hy = by - h * 0.16;
+  body.push(
+    `<path d="M ${r(bx - h * 0.3)} ${r(by + h * 0.04)} ` +
+      `C ${r(bx - h * 0.36)} ${r(by + h * 0.5)} ${r(bx + h * 0.36)} ${r(by + h * 0.5)} ` +
+      `${r(bx + h * 0.3)} ${r(by + h * 0.04)} Z" fill="${a.cloth}"/>`,
+    `<circle cx="${r(bx - h * 0.31)}" cy="${r(by + h * 0.14)}" r="${r(h * 0.08)}" fill="${a.skin}"/>`,
+    `<circle cx="${r(bx + h * 0.31)}" cy="${r(by + h * 0.14)}" r="${r(h * 0.08)}" fill="${a.skin}"/>`,
+    `<circle cx="${r(bx - hr * 0.94)}" cy="${r(hy)}" r="${r(hr * 0.22)}" fill="${a.skin}"/>`,
+    `<circle cx="${r(bx + hr * 0.94)}" cy="${r(hy)}" r="${r(hr * 0.22)}" fill="${a.skin}"/>`,
+    `<circle cx="${r(bx)}" cy="${r(hy)}" r="${r(hr)}" fill="${a.skin}"/>`,
+    `<path d="M ${r(bx - hr * 0.96)} ${r(hy - hr * 0.16)} ` +
+      `C ${r(bx - hr * 0.8)} ${r(hy - hr * 1.5)} ${r(bx + hr * 0.8)} ${r(hy - hr * 1.5)} ` +
+      `${r(bx + hr * 0.96)} ${r(hy - hr * 0.16)} Z" fill="${a.hair}"/>`,
+    `<circle cx="${r(bx - hr * 0.34)}" cy="${r(hy + hr * 0.12)}" r="${r(hr * 0.1)}" fill="${FACE_INK}"/>`,
+    `<circle cx="${r(bx + hr * 0.34)}" cy="${r(hy + hr * 0.12)}" r="${r(hr * 0.1)}" fill="${FACE_INK}"/>`,
+    `<path d="M ${r(bx - hr * 0.2)} ${r(hy + hr * 0.46)} ` +
+      `Q ${r(bx)} ${r(hy + hr * 0.64)} ${r(bx + hr * 0.2)} ${r(hy + hr * 0.46)}" ` +
+      `fill="none" stroke="${FACE_INK}" stroke-width="${r(hr * 0.07)}" stroke-linecap="round"/>`,
+    `<ellipse cx="${r(bx - hr * 0.62)}" cy="${r(hy + hr * 0.34)}" rx="${r(hr * 0.16)}" ry="${r(hr * 0.11)}" fill="#e38f8f" opacity="0.5"/>`,
+    `<ellipse cx="${r(bx + hr * 0.62)}" cy="${r(hy + hr * 0.34)}" rx="${r(hr * 0.16)}" ry="${r(hr * 0.11)}" fill="#e38f8f" opacity="0.5"/>`,
+  );
+
+  body.push(`<rect ${whole} fill="url(#${id}-edge)"/>`);
+  return { defs: defs.join(""), body: body.join("") };
+}
+
+// ---------------------------------------------------------------------------
 
 /**
  * The single entry point.
@@ -249,6 +391,8 @@ export function drawArt(id: string, frame: Box, art: Art): Fragment {
       return tape(id, frame, art);
     case "kiss":
       return kiss(id, frame, art);
+    case "scene":
+      return scene(id, frame, art);
     default:
       return EMPTY;
   }

@@ -15,7 +15,7 @@
  */
 
 import { contains, rotatedBounds } from "./geometry";
-import { cropOf, safeBox, trimBox } from "./defaults";
+import { cropOf, measuredLength, safeBox, trimBox } from "./defaults";
 import { isKnownFace } from "../render/fonts";
 import type { PageFill, PageTemplate } from "./types";
 
@@ -121,8 +121,14 @@ export function validateFill(t: PageTemplate, f: PageFill): Problem[] {
       say("fill.unknownTextSlot", slot, "the template has no text slot by that name");
       continue;
     }
-    if (value.length > layer.maxChars) {
-      say("fill.textTooLong", slot, `${value.length} characters, the slot takes ${layer.maxChars}`);
+    // `measuredLength` rather than `String.length`, because `transform:
+    // "uppercase"` can lengthen a string — German ß becomes SS — and the limit
+    // the printed page obeys is the one on what is actually set. It is the
+    // same function the editor's counter and `drawTextSlot`'s backstop use, so
+    // there is one definition of "how long is this" and not three.
+    const length = measuredLength(layer, value);
+    if (length > layer.maxChars) {
+      say("fill.textTooLong", slot, `${length} characters, the slot takes ${layer.maxChars}`);
     }
   }
 

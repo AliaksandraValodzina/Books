@@ -9,7 +9,10 @@
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "print": "tsx scripts/render-print.ts"
+    "print": "tsx scripts/render-print.ts",
+    "book": "tsx scripts/render-book.ts",
+    "looks": "tsx scripts/check-looks.ts",
+    "looks:import": "tsx scripts/import-looks.ts"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",

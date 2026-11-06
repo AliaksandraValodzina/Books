@@ -27,7 +27,7 @@
 
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import Home from "../app/page";
+import Home from "../app/my-forever/page";
 import Checkout from "../app/checkout/page";
 import { DELIVERY, PLACEHOLDER, UNCONFIRMED, WHAT_YOU_GET } from "../lib/product";
 import { MY_FOREVER } from "../templates/my-forever";

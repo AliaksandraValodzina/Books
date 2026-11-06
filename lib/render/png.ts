@@ -27,6 +27,45 @@ export function readPngSize(bytes: Uint8Array): { width: number; height: number 
   return { width: view.getUint32(16), height: view.getUint32(20) };
 }
 
+/**
+ * Everything the IHDR declares, for a file somebody else made.
+ *
+ * `readPngSize` answers the one question the print path asks about its own
+ * output. This answers the questions `lib/book/upload.ts` has to ask about an
+ * **uploaded** page, where the file was produced by a tool nobody here
+ * controls: an alpha channel that lets paper show through artwork, a bit depth
+ * a RIP will handle differently, an interlaced file some RIPs mishandle. All
+ * three render perfectly well on screen, which is exactly why a person cannot
+ * catch them.
+ *
+ * Colour type is PNG's own numbering: 0 greyscale, 2 RGB, 3 palette, 4
+ * greyscale+alpha, 6 RGBA.
+ */
+export interface PngHeader {
+  width: number;
+  height: number;
+  bitDepth: number;
+  colourType: number;
+  interlaced: boolean;
+}
+
+export function readPngHeader(bytes: Uint8Array): PngHeader {
+  const { width, height } = readPngSize(bytes);
+  return {
+    width,
+    height,
+    bitDepth: bytes[24],
+    colourType: bytes[25],
+    // Byte 28 is the interlace method: 0 none, 1 Adam7.
+    interlaced: bytes[28] === 1,
+  };
+}
+
+/** Does this colour type carry an alpha channel? Types 4 and 6, and only those. */
+export function hasAlphaChannel(colourType: number): boolean {
+  return colourType === 4 || colourType === 6;
+}
+
 /** The chunk types present, in order. Enough to prove sRGB landed where it must. */
 export function pngChunkTypes(bytes: Uint8Array): string[] {
   if (!isPng(bytes)) throw new NotAPng("not a PNG: signature does not match");

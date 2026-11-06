@@ -100,6 +100,69 @@ export interface PrintResult {
 export class PrintSizeMismatch extends Error {}
 
 /**
+ * The rasteriser, configured the one way this product ever configures it.
+ *
+ * Extracted so `renderPrintPng` and `renderPrintPixels` cannot be set up
+ * differently. They are the PNG and the PDF paths respectively, and two
+ * `Resvg` constructions would be two chances for one of them to load a font
+ * the other did not — which is precisely the class of difference
+ * `lib/render/coverage.ts` exists to keep out of a printed word.
+ */
+function rasterise(template: PageTemplate, svg: string) {
+  return new Resvg(svg, {
+    fitTo: { mode: "width", value: template.print.pixels.width },
+    font: {
+      loadSystemFonts: false, // A machine's own fonts are a difference between machines.
+      fontFiles: Object.values(FACES).map((f) => path.join(process.cwd(), "public", f.file)),
+    },
+    background: template.canvas.background,
+  }).render();
+}
+
+export interface PixelResult {
+  /** RGBA, row-major, 8 bits per channel. */
+  rgba: Uint8Array;
+  width: number;
+  height: number;
+  svg: string;
+}
+
+/**
+ * The page as raw pixels, for a container that is not a PNG.
+ *
+ * `lib/render/pdf.ts` embeds a `/DeviceRGB` image and would otherwise have to
+ * decode a PNG this module had just encoded. **It is the same render**: the
+ * same `renderPrintSvg`, the same rasteriser configuration, the same size.
+ * Nothing here is a second drawing path — `renderPageSvg` is still the only
+ * thing that decides what a page looks like, which is what `one-renderer`
+ * means.
+ *
+ * The size is measured off the rasteriser's own output rather than copied from
+ * the request, for `renderPrintPng`'s reason: nearly right is the failure that
+ * survives every check until a book is printed.
+ */
+export async function renderPrintPixels(
+  template: PageTemplate,
+  fill: PageFill,
+  supplied?: SuppliedBytes,
+): Promise<PixelResult> {
+  const svg = await renderPrintSvg(template, fill, supplied);
+  const image = rasterise(template, svg);
+  const want = template.print.pixels;
+  if (image.width !== want.width || image.height !== want.height) {
+    throw new PrintSizeMismatch(
+      `${template.id} rendered ${image.width}×${image.height}, asked for ${want.width}×${want.height}`,
+    );
+  }
+  return {
+    rgba: new Uint8Array(image.pixels),
+    width: image.width,
+    height: image.height,
+    svg,
+  };
+}
+
+/**
  * Render the page to the print file.
  *
  * The size comes from `template.print.pixels`, and the result is **measured
@@ -116,16 +179,7 @@ export async function renderPrintPng(
   const svg = await renderPrintSvg(template, fill, supplied);
   const want = template.print.pixels;
 
-  const resvg = new Resvg(svg, {
-    fitTo: { mode: "width", value: want.width },
-    font: {
-      loadSystemFonts: false, // A machine's own fonts are a difference between machines.
-      fontFiles: Object.values(FACES).map((f) => path.join(process.cwd(), "public", f.file)),
-    },
-    background: template.canvas.background,
-  });
-
-  const raw = new Uint8Array(resvg.render().asPng());
+  const raw = new Uint8Array(rasterise(template, svg).asPng());
   const png = template.print.colourSpace === "srgb" ? withSrgbChunk(raw) : raw;
   const pixels = readPngSize(png);
 
